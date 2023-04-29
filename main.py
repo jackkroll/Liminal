@@ -1,16 +1,23 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+from octorest import OctoRest
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
 
+def make_client(url, apikey):
+    """Creates and returns an instance of the OctoRest client.
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+    Args:
+        url - the url to the OctoPrint server
+        apikey - the apikey from the OctoPrint server found in settings
+    """
+    try:
+        client = OctoRest(url=url, apikey=apikey)
+        return client
+    except ConnectionError as ex:
+        # Handle exception as you wish
+        print(ex)
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+client = make_client("http://prusaprinter.local", "572323F7CF4749F4BD2DCC610E443C0E")
+#client.jog moves print axis
+client.connect()
+client.jog(x= 5)
+
