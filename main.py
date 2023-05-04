@@ -1,6 +1,8 @@
+import time
+
 from octorest import OctoRest
-
-
+import asyncio
+import os
 
 def make_client(url, apikey):
     """Creates and returns an instance of the OctoRest client.
@@ -16,9 +18,45 @@ def make_client(url, apikey):
         # Handle exception as you wish
         print(ex)
 
-client = make_client("http://prusaprinter.local", "572323F7CF4749F4BD2DCC610E443C0E")
-#client.jog moves print axis
-client.connect()
-client.jog(x= 5)
+class SingelePrinter():
+    """"
+    This creates a basic printer class with additional information
+    """
+    def __init__(self, nickname, url, key):
+        self.nickname = nickname
+        self.url = url
+        self.key = key
+       #self.color = color
+        self.printer = make_client(url = url, apikey= key)
+        self.printer.connect()
 
-#does this works
+    def preheat(self):
+        """
+        Preheats to PLA's target temp
+        """
+        self.printer.bed_target(60)
+        self.printer.tool_target(210)
+    def cooldown(self):
+        """
+        Cools down the printer
+        """
+        self.printer.bed_target(0)
+        self.printer.tool_target(0)
+
+    def uploadLocal(self, filepath):
+        """
+        Only useful for testing. Will not work/will be useless in full implementation
+        """
+        file = open(filepath, "rb")
+        file_contents = file.read()
+        name = "testing2.gcode"
+        tempPath = self.printer.upload(file = (name, file_contents), location= "local",print= True)
+        self.printer.select(location=name, print= True)
+        print(tempPath)
+
+    def abort(self):
+        self.printer.cancel()
+
+
+myPrinter = SingelePrinter("josef", "http://prusaprinter.local", "572323F7CF4749F4BD2DCC610E443C0E")
+myPrinter.printer.disconnect()
