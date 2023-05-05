@@ -29,6 +29,9 @@ class SingelePrinter():
        #self.color = color
         self.printer = make_client(url = url, apikey= key)
         self.printer.connect()
+        self.user = None
+        self.currentFile = None
+
 
     def preheat(self):
         """
@@ -43,19 +46,21 @@ class SingelePrinter():
         self.printer.bed_target(0)
         self.printer.tool_target(0)
 
-    def uploadLocal(self, filepath):
+    def uploadLocal(self, filepath, fileName : str, uploader):
         """
         Only useful for testing. Will not work/will be useless in full implementation
         """
         file = open(filepath, "rb")
         file_contents = file.read()
-        name = "testing2.gcode"
-        tempPath = self.printer.upload(file = (name, file_contents), location= "local",print= True)
-        self.printer.select(location=name, print= True)
-        print(tempPath)
+        self.printer.upload(file = (fileName, file_contents), location= "local",print= True)
+        self.printer.select(location= fileNamename, print= True)
+        self.currentFile = file_contents
+        self.user = uploader
+
 
     def abort(self):
         self.printer.cancel()
+        #Used for implementing LED Methods + Sending notifications
 
 
 myPrinter = SingelePrinter("josef", "http://prusaprinter.local", "572323F7CF4749F4BD2DCC610E443C0E")
