@@ -1,8 +1,6 @@
-import time
-
+import time, asyncio, os, pytimeparse, datetime
+from datetime import datetime, timedelta
 from octorest import OctoRest
-import asyncio
-import os
 
 def make_client(url, apikey):
     """Creates and returns an instance of the OctoRest client.
@@ -18,7 +16,7 @@ def make_client(url, apikey):
         # Handle exception as you wish
         print(ex)
 
-class SingelePrinter():
+class SinglePrinter():
     """"
     This creates a basic printer class with additional information
     """
@@ -35,7 +33,7 @@ class SingelePrinter():
 
     def preheat(self):
         """
-        Preheats to PLA's target temp
+        Preheats to PLAs target temp
         """
         self.printer.bed_target(60)
         self.printer.tool_target(210)
@@ -53,15 +51,32 @@ class SingelePrinter():
         file = open(filepath, "rb")
         file_contents = file.read()
         self.printer.upload(file = (fileName, file_contents), location= "local",print= True)
-        self.printer.select(location= fileNamename, print= True)
+        self.printer.select(location= fileName, print= True)
         self.currentFile = file_contents
         self.user = uploader
-
 
     def abort(self):
         self.printer.cancel()
         #Used for implementing LED Methods + Sending notifications
 
+#class PrintUpload():
+ #   def __init__(self, gcode, uploader):
+  #      self.gcode = gcode
+   #     self.uploader = uploader
+def parseGCODE(filepath):
+    file = open(filepath, "r")
+    file_contents = file.read()
+    file_contents = file_contents.split(";")
+    printTime = [item for item in file_contents if item.startswith(" estimated printing time (normal mode)")][0]
+    #Above, getting the print time from the GCODE. Below, parsing the string to extract the timing
+    printTime = printTime.strip(" estimated printing time (normal mode) = ")
+    printTime = printTime.strip("\n")
+    timeInSec = pytimeparse.parse(printTime)
+    timeDelta = timedelta(seconds= timeInSec)
+    print(datetime.now() + timeDelta)
 
-myPrinter = SingelePrinter("josef", "http://prusaprinter.local", "572323F7CF4749F4BD2DCC610E443C0E")
-myPrinter.printer.disconnect()
+parseGCODE("C:\\Users\\jackk\\Downloads\\wacky.gcode")
+#myPrinter = SinglePrinter("josef", "http://prusaprinter.local", "572323F7CF4749F4BD2DCC610E443C0E")
+#myPrinter.printer.disconnect()
+
+
