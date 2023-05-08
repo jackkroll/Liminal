@@ -2,6 +2,7 @@ import time, asyncio, os, pytimeparse, datetime
 from datetime import datetime, timedelta
 from octorest import OctoRest
 
+
 def make_client(url, apikey):
     """Creates and returns an instance of the OctoRest client.
 
@@ -74,8 +75,14 @@ def parseGCODE(filepath):
     timeInSec = pytimeparse.parse(printTime)
     timeDelta = timedelta(seconds= timeInSec)
     print(datetime.now() + timeDelta)
+#Left Printer,http://10.110.8.77 ,FCDAE0344C424542B80117AF896B62F6
+#Right Printer,http://10.110.8.100 ,33A782146A5A48A7B3B9873217BD19AC
 
-parseGCODE("C:\\Users\\jackk\\Downloads\\wacky.gcode")
+#(self, nickname, url, key
+printers = [SinglePrinter("left", "http://10.110.8.77", "FCDAE0344C424542B80117AF896B62F6"),SinglePrinter("right", "http://10.110.8.100", "33A782146A5A48A7B3B9873217BD19AC")]
+for printer in printers:
+    printer.printer.jog(x = 10)
+
 #myPrinter = SinglePrinter("josef", "http://prusaprinter.local", "572323F7CF4749F4BD2DCC610E443C0E")
 #myPrinter.printer.disconnect()
 
