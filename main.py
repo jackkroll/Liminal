@@ -1,6 +1,7 @@
-import time, asyncio, os, pytimeparse, datetime
+import time, asyncio, os, pytimeparse, datetime, requests
 from datetime import datetime, timedelta
 from octorest import OctoRest
+
 
 def make_client(url, apikey):
     """Creates and returns an instance of the OctoRest client.
@@ -27,6 +28,7 @@ class SinglePrinter():
        #self.color = color
         self.printer = make_client(url = url, apikey= key)
         self.printer.connect()
+        #self.printer.home()
         self.user = None
         self.currentFile = None
 
@@ -54,6 +56,18 @@ class SinglePrinter():
         self.printer.select(location= fileName, print= True)
         self.currentFile = file_contents
         self.user = uploader
+    def upload(self, link, fileName : str, uploader):
+        """
+        Only useful for testing. Will not work/will be useless in full implementation
+        """
+
+        file_contents = requests.get(link).text
+        print(file_contents)
+        self.printer.upload(file = (fileName + ".gcode", file_contents), location= "local",print= True)
+        time.sleep(1)
+        self.printer.select(location= fileName + ".gcode", print= True)
+        self.currentFile = file_contents
+        self.user = uploader
 
     def abort(self):
         self.printer.cancel()
@@ -73,10 +87,20 @@ def parseGCODE(filepath):
     printTime = printTime.strip("\n")
     timeInSec = pytimeparse.parse(printTime)
     timeDelta = timedelta(seconds= timeInSec)
-    print(datetime.now() + timeDelta)
+    #Below, getting nozzle diameter for print
+    nozzleDiameter = [item for item in file_contents if item.startswith(" nozzle_diameter = ")][0]
+    nozzleDiameter = nozzleDiameter.strip(" nozzle_diameter = ")
+    nozzleDiameter = nozzleDiameter.strip("\n")
+    print("Nozzle: "+ nozzleDiameter)
+    print("Time to print: "+ str(timeDelta.seconds/60))
 
-parseGCODE("C:\\Users\\jackk\\Downloads\\wacky.gcode")
-#myPrinter = SinglePrinter("josef", "http://prusaprinter.local", "572323F7CF4749F4BD2DCC610E443C0E")
+#Left Printer,http://10.110.8.77 ,FCDAE0344C424542B80117AF896B62F6
+#Middle Printer, http://10.110.8.110, 6273C0628B8B47E397CA4554C94F6CD5
+#Right Printer,http://10.110.8.100 ,33A782146A5A48A7B3B9873217BD19AC
+
+spencer = SinglePrinter("Middle", "http://10.110.8.110","6273C0628B8B47E397CA4554C94F6CD5")
+parseGCODE(r"C:\Users\LOHoeffelT05\Downloads\C _Users_HS.Robotics_Downloads_test.gcode")
+
 #myPrinter.printer.disconnect()
 
 
