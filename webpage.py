@@ -24,9 +24,9 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload():
     file = request.files['file']
-    fileName = ("C:\\Users\\HS.Robotics\\Downloads\\SpEnCer.PNG")
-    blob = bucket.blob(fileName)
-    blob.upload_from_filename(fileName)
+
+    blob = bucket.blob(file)
+    blob.upload_from_filename(file)
     blob.make_public()
     #print("your file url", blob.public_url)
     return """<html> 
