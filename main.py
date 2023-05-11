@@ -72,6 +72,8 @@ class SinglePrinter():
     def abort(self):
         self.printer.cancel()
         #Used for implementing LED Methods + Sending notifications
+    def temps(self):
+        return self.printer.tool(history = True, limit = 1)
 
 #class PrintUpload():
  #   def __init__(self, gcode, uploader):
@@ -99,7 +101,7 @@ def parseGCODE(filepath):
 #Right Printer,http://10.110.8.100 ,33A782146A5A48A7B3B9873217BD19AC
 
 spencer = SinglePrinter("Middle", "http://10.110.8.110","6273C0628B8B47E397CA4554C94F6CD5")
-parseGCODE(r"C:\Users\LOHoeffelT05\Downloads\C _Users_HS.Robotics_Downloads_test.gcode")
+spencer.printer.jog(x=5)
 
 #myPrinter.printer.disconnect()
 
