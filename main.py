@@ -1,4 +1,4 @@
-import time, asyncio, os, pytimeparse, datetime, requests
+import time, asyncio, os, pytimeparse, datetime, requests, random
 from datetime import datetime, timedelta
 from octorest import OctoRest
 
@@ -79,7 +79,47 @@ class SinglePrinter():
  #   def __init__(self, gcode, uploader):
   #      self.gcode = gcode
    #     self.uploader = uploader
-def parseGCODE(filepath):
+class IndividualPrint():
+    def __init__(self, file, creator, material, printerCode):
+        self.file = file
+        self.creator = creator
+        self.material = material
+        gcodeData = parseGCODE(file)[1]
+        self.timeToPrint = gcodeData[1]
+        self.nozzle = gcodeData[0]
+        self.printerCode = printerCode.upper()
+        #Add implementation to check UUID to ensure it isn't the 0.007% chance they're the same
+        uuid = ""
+        letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+         'w', 'x', 'y', 'z']
+        for i in range(3):
+            uuid += random.choice(letters).upper()
+        self.uuid = printerCode.upper() + uuid
+class Liminal():
+
+    def __init__(self):
+        self.printers = [
+            SinglePrinter("Left", "http://10.110.8.77", "FCDAE0344C424542B80117AF896B62F6"),
+            SinglePrinter("Middle", "http://10.110.8.110","6273C0628B8B47E397CA4554C94F6CD5"),
+            SinglePrinter("Right", "http://10.110.8.100", "33A782146A5A48A7B3B9873217BD19AC")]
+        self.state = "idle"
+        #State Map
+        #Idle: All printers are OK, nothing printing
+        #Printing: One or more printers are ongoing, printers OK
+        #Error: The printers detected an issue, no connection or other
+        #Stop: All printers have been immediately e-stopped
+        self.optimizeDuring= (datetime.time(hour=18), datetime.time(hour=21))
+        self.queue = []
+
+    def estop(self):
+        for printer in self.printers:
+            printer.abort()
+        #Implement methods for display & mobile notifications to dispatch
+    def addToQueue(self, optimize : bool, position : int, gcode):
+        currentTime = datetime.now().time()
+
+
+def parseGCODELocal(filepath):
     file = open(filepath, "r")
     file_contents = file.read()
     file_contents = file_contents.split(";")
@@ -93,9 +133,24 @@ def parseGCODE(filepath):
     nozzleDiameter = [item for item in file_contents if item.startswith(" nozzle_diameter = ")][0]
     nozzleDiameter = nozzleDiameter.strip(" nozzle_diameter = ")
     nozzleDiameter = nozzleDiameter.strip("\n")
-    print("Nozzle: "+ nozzleDiameter)
-    print("Time to print: "+ str(timeDelta.seconds/60))
 
+    return [nozzleDiameter, timedelta.seconds]
+def parseGCODE(link):
+    file = requests.get(link).text
+    file_contents = file.read()
+    file_contents = file_contents.split(";")
+    printTime = [item for item in file_contents if item.startswith(" estimated printing time (normal mode)")][0]
+    #Above, getting the print time from the GCODE. Below, parsing the string to extract the timing
+    printTime = printTime.strip(" estimated printing time (normal mode) = ")
+    printTime = printTime.strip("\n")
+    timeInSec = pytimeparse.parse(printTime)
+    timeDelta = timedelta(seconds= timeInSec)
+    #Below, getting nozzle diameter for print
+    nozzleDiameter = [item for item in file_contents if item.startswith(" nozzle_diameter = ")][0]
+    nozzleDiameter = nozzleDiameter.strip(" nozzle_diameter = ")
+    nozzleDiameter = nozzleDiameter.strip("\n")
+
+    return [nozzleDiameter, timedelta.seconds]
 #Left Printer,http://10.110.8.77 ,FCDAE0344C424542B80117AF896B62F6
 #Middle Printer, http://10.110.8.110, 6273C0628B8B47E397CA4554C94F6CD5
 #Right Printer,http://10.110.8.100 ,33A782146A5A48A7B3B9873217BD19AC
