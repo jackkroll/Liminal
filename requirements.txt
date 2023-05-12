@@ -1,0 +1,5 @@
+pytimeparse~=1.1.8
+firebase-admin~=6.1.0
+flask~=2.3.2
+requests~=2.30.0
+octorest~=0.4

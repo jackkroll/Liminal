@@ -12,7 +12,7 @@ def index():
     for printer in printers:
         body += f"<h1>{printer.nickname}</h1>"
         body += f"<h3>{printer.temps()}"
-        print(printer.temps[1]
+        print(printer.temps[1])
     body += "</html></body>"
 
     return body
