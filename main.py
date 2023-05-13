@@ -72,8 +72,10 @@ class SinglePrinter():
     def abort(self):
         self.printer.cancel()
         #Used for implementing LED Methods + Sending notifications
-    def temps(self):
-        return self.printer.tool(history = True, limit = 1)
+    def fetchNozzleTemp(self):
+        return self.printer.tool(history = True, limit = 1)["tool0"]
+    def fetchBedTemp(self):
+        return self.printer.bed(history = True, limit = 1)["bed"]
 
 #class PrintUpload():
  #   def __init__(self, gcode, uploader):
@@ -155,8 +157,8 @@ def parseGCODE(link):
 #Middle Printer, http://10.110.8.110, 6273C0628B8B47E397CA4554C94F6CD5
 #Right Printer,http://10.110.8.100 ,33A782146A5A48A7B3B9873217BD19AC
 
-spencer = SinglePrinter("Middle", "http://10.110.8.110","6273C0628B8B47E397CA4554C94F6CD5")
-spencer.printer.jog(x=5)
+#spencer = SinglePrinter("Middle", "http://10.110.8.110","6273C0628B8B47E397CA4554C94F6CD5")
+#spencer.printer.jog(x=5)
 
 #myPrinter.printer.disconnect()
 
