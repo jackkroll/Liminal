@@ -16,7 +16,25 @@ def make_client(url, apikey):
     except ConnectionError as ex:
         # Handle exception as you wish
         print(ex)
-
+class IndividualPrint():
+    def __init__(self, file, creator, material, printerCode, nickname):
+        self.file = file
+        self.creator = creator
+        self.material = material
+        gcodeData = parseGCODE(file)[1]
+        #TIME TO PRINT IS IN SECONDS
+        self.timeToPrint = gcodeData[1]
+        self.nozzle = gcodeData[0]
+        self.printerCode = printerCode.upper()
+        self.nickname = nickname
+        #Add implementation to check UUID to ensure it isn't the 0.007% chance they're the same
+        uuid = ""
+        letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+         'w', 'x', 'y', 'z']
+        for i in range(3):
+            uuid += random.choice(letters).upper()
+        self.uuid = printerCode.upper() + uuid
+        self.estimatedStartTime = None
 class SinglePrinter():
     """"
     This creates a basic printer class with additional information
@@ -31,6 +49,8 @@ class SinglePrinter():
         #self.printer.home()
         self.user = None
         self.currentFile = None
+
+        self.queue = []
 
 
     def preheat(self):
@@ -56,18 +76,17 @@ class SinglePrinter():
         self.printer.select(location= fileName, print= True)
         self.currentFile = file_contents
         self.user = uploader
-    def upload(self, link, fileName : str, uploader):
+    def upload(self, print : IndividualPrint):
         """
-        Only useful for testing. Will not work/will be useless in full implementation
+        Uploads using a IndividualPrint Object
         """
 
-        file_contents = requests.get(link).text
-        print(file_contents)
-        self.printer.upload(file = (fileName + ".gcode", file_contents), location= "local",print= True)
+        file_contents = requests.get(print.file).text
+        self.printer.upload(file = (print.nickname + ".gcode", file_contents), location= "local",print= True)
         time.sleep(1)
-        self.printer.select(location= fileName + ".gcode", print= True)
+        self.printer.select(location= print.nickname + ".gcode", print= True)
         self.currentFile = file_contents
-        self.user = uploader
+        self.user = print.creator
 
     def abort(self):
         self.printer.cancel()
@@ -77,26 +96,39 @@ class SinglePrinter():
     def fetchBedTemp(self):
         return self.printer.bed(history = True, limit = 1)["bed"]
 
+    def addToQueue(self, gcode: IndividualPrint):
+        officeHours = [(datetime.time(hour= 18), datetime.time(hour= 21))]
+
+        info = self.printer.job_info()
+        startTime = datetime.now()
+        nextAvilableStart = 0
+        printTime = gcode.timeToPrint
+        if info["state"] == "Printing":
+            remaining = info["progress"]["printTimeLeft"]
+            remaining += (10 * 60) #Adds to minute buffer in seconds
+            nextAvilableStart += remaining
+        startTime += datetime.timedelta(seconds=nextAvilableStart)
+        for set in officeHours:
+            if datetime.time > set[0] and datetime < set[1] and startTime >= set[1]:
+            #If we're within this set off office hours and the current print will end outside of them
+
+        #Gap optimization algorithm
+        for singlePrint in self.queue:
+            #Calculating the timedelta between the requested print time and the current estimated next avilable start time
+            #If that gap is greater than the time to print, slot that print in.
+            if (singlePrint.estimatedStartTime - startTime) > gcode.timeToPrint:
+                self.queue.insert(self.queue.index(singlePrint), gcode)
+                #Setting the object it's estimated start time
+                gcode.estimatedStartTime = startTime
+                break
+
+
+
 #class PrintUpload():
  #   def __init__(self, gcode, uploader):
   #      self.gcode = gcode
    #     self.uploader = uploader
-class IndividualPrint():
-    def __init__(self, file, creator, material, printerCode):
-        self.file = file
-        self.creator = creator
-        self.material = material
-        gcodeData = parseGCODE(file)[1]
-        self.timeToPrint = gcodeData[1]
-        self.nozzle = gcodeData[0]
-        self.printerCode = printerCode.upper()
-        #Add implementation to check UUID to ensure it isn't the 0.007% chance they're the same
-        uuid = ""
-        letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-         'w', 'x', 'y', 'z']
-        for i in range(3):
-            uuid += random.choice(letters).upper()
-        self.uuid = printerCode.upper() + uuid
+
 class Liminal():
 
     def __init__(self):
@@ -105,20 +137,21 @@ class Liminal():
             SinglePrinter("Middle", "http://10.110.8.110","6273C0628B8B47E397CA4554C94F6CD5"),
             SinglePrinter("Right", "http://10.110.8.100", "33A782146A5A48A7B3B9873217BD19AC")]
         self.state = "idle"
+        self.estimatedBufferTime = 10
         #State Map
         #Idle: All printers are OK, nothing printing
         #Printing: One or more printers are ongoing, printers OK
         #Error: The printers detected an issue, no connection or other
         #Stop: All printers have been immediately e-stopped
-        self.optimizeDuring= (datetime.time(hour=18), datetime.time(hour=21))
-        self.queue = []
+        self.officeHours= [(datetime.time(hour=18), datetime.time(hour=21))]
 
     def estop(self):
         for printer in self.printers:
             printer.abort()
         #Implement methods for display & mobile notifications to dispatch
-    def addToQueue(self, optimize : bool, position : int, gcode):
-        currentTime = datetime.now().time()
+
+
+
 
 
 def parseGCODELocal(filepath):
