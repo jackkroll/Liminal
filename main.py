@@ -1,3 +1,4 @@
+import math
 import time, asyncio, os, pytimeparse, datetime, requests, random
 from datetime import datetime, timedelta
 from octorest import OctoRest
@@ -35,6 +36,7 @@ class IndividualPrint():
             uuid += random.choice(letters).upper()
         self.uuid = printerCode.upper() + uuid
         self.estimatedStartTime = None
+        self.estimatedEndTime = None
 class SinglePrinter():
     """"
     This creates a basic printer class with additional information
@@ -96,7 +98,20 @@ class SinglePrinter():
     def fetchBedTemp(self):
         return self.printer.bed(history = True, limit = 1)["bed"]
 
-    def addToQueue(self, gcode: IndividualPrint):
+    def scheduler(self, gcode: IndividualPrint, requestedTime):
+        times = []
+        gaps = []
+        for print in self.queue:
+            times.append(print.estimatedStartTime)
+            times.append(print.estimatedEndTime)
+        times.pop(0)
+        times.pop(-1)
+        for item in range(0, len(times), 2):
+            gaps += (times[item], times[item + 1], times[item + 1] - times [item])
+            #Appends a tuple containing the gaps start, and the gaps end, and a timedelta object of the time between
+
+
+    def addToQueueOld(self, gcode: IndividualPrint):
         officeHours = [(datetime.time(hour= 18), datetime.time(hour= 21))]
 
         info = self.printer.job_info()
@@ -110,7 +125,8 @@ class SinglePrinter():
         startTime += datetime.timedelta(seconds=nextAvilableStart)
         for set in officeHours:
             if datetime.time > set[0] and datetime < set[1] and startTime >= set[1]:
-            #If we're within this set off office hours and the current print will end outside of them
+                print("yuh")
+        #If we're within this set off office hours and the current print will end outside of them
 
         #Gap optimization algorithm
         for singlePrint in self.queue:
