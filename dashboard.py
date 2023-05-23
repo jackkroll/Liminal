@@ -5,7 +5,7 @@ app = Flask(__name__)
 #Left Printer,http://10.110.8.77 ,FCDAE0344C424542B80117AF896B62F6
 #Middle Printer, http://10.110.8.110, 6273C0628B8B47E397CA4554C94F6CD5
 #Right Printer,http://10.110.8.100 ,33A782146A5A48A7B3B9873217BD19AC
-printers = [SinglePrinter("Left Printer", "http://10.110.8.77","FCDAE0344C424542B80117AF896B62F6"),SinglePrinter("Middle Printer", "http://10.110.8.110","6273C0628B8B47E397CA4554C94F6CD5"),SinglePrinter("Right Printer", "http://10.110.8.100","33A782146A5A48A7B3B9873217BD19AC")]
+printers = [SinglePrinter("Middle Printer", "http://10.110.8.110","6273C0628B8B47E397CA4554C94F6CD5")]
 
 @app.route('/')
 def index():

@@ -6,7 +6,7 @@ import string
 
 cred = credentials.Certificate('C:\\Users\\HS.Robotics\\Downloads\\liminal-302-cred.json')
 initialize_app(cred, {'storageBucket': 'liminal-302.appspot.com'})
-db = firestore.client()
+
 bucket = storage.bucket()
 async def upload():
     fileName = ("C:\\Users\\HS.Robotics\\Downloads\\SpEnCer.PNG")
@@ -17,8 +17,8 @@ async def upload():
 asyncio.run(upload())
 
 length = int(input('5'))
-characterList = "1,2,3,4,5,6,7,8,9,0"
-print()
+characterList = [1,2,3,4,5,6,7,8,9,0]
+
 db.collection('prints').document('test').set({
     u'name': u'Los Angeles',
     u'state': u'CA',

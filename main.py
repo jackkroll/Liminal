@@ -2,8 +2,10 @@ import math
 import time, asyncio, os, pytimeparse, datetime, requests, random
 from datetime import datetime, timedelta
 from octorest import OctoRest
+from firebase_admin import credentials, initialize_app, storage, firestore
 
-
+#db = firestore.client()
+#prints_ref = db.collection('prints')
 def make_client(url, apikey):
     """Creates and returns an instance of the OctoRest client.
 
@@ -29,11 +31,17 @@ class IndividualPrint():
         self.printerCode = printerCode.upper()
         self.nickname = nickname
         #Add implementation to check UUID to ensure it isn't the 0.007% chance they're the same
-        uuid = ""
-        letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-         'w', 'x', 'y', 'z']
-        for i in range(3):
-            uuid += random.choice(letters).upper()
+        passed_check = False
+        while not passed_check:
+            uuid = ""
+            letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+             'w', 'x', 'y', 'z']
+            for i in range(3):
+                uuid += random.choice(letters).upper()
+            query_ref = prints_ref.where('id', '==', uuid)
+            if len(query_ref) == 0:
+                passed_check = True
+
         self.uuid = printerCode.upper() + uuid
         self.estimatedStartTime = None
         self.estimatedEndTime = None
