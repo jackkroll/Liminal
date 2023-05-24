@@ -1,4 +1,4 @@
-from flask import Flask, request, send_file
+from flask import Flask, request, send_file, redirect
 from firebase_admin import credentials, initialize_app, storage
 from main import SinglePrinter, Liminal
 app = Flask(__name__)
@@ -41,7 +41,10 @@ def functions():
             for printer in liminal.printers:
                 if request.form.get("preheat") == printer.nickname:
                     printer.preheat()
-
+@app.route('/print', methods = ["GET", "POST"])
+def uploadPrintURL():
+    if request.method == "GET":
+        return redirect
 
 if __name__ == '__main__':
     app.run(debug=True, host="localhost", port= 8000)

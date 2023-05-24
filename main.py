@@ -53,6 +53,8 @@ class SinglePrinter():
         self.nickname = nickname
         self.url = url
         self.key = key
+        self.state = None
+        #Idle, Printing, Offline
        #self.color = color
         self.printer = make_client(url = url, apikey= key)
         self.printer.connect()
@@ -157,8 +159,8 @@ class Liminal():
 
     def __init__(self):
         self.printers = [
-            SinglePrinter("Left", "http://10.110.8.77", "FCDAE0344C424542B80117AF896B62F6"),
-            SinglePrinter("Middle", "http://10.110.8.110","6273C0628B8B47E397CA4554C94F6CD5"),
+            #SinglePrinter("Left", "http://10.110.8.77", "FCDAE0344C424542B80117AF896B62F6"),
+            #SinglePrinter("Middle", "http://10.110.8.110","6273C0628B8B47E397CA4554C94F6CD5"),
             SinglePrinter("Right", "http://10.110.8.100", "33A782146A5A48A7B3B9873217BD19AC")]
         self.state = "idle"
         self.estimatedBufferTime = 10
@@ -167,7 +169,7 @@ class Liminal():
         #Printing: One or more printers are ongoing, printers OK
         #Error: The printers detected an issue, no connection or other
         #Stop: All printers have been immediately e-stopped
-        self.officeHours= [(datetime.time(hour=18), datetime.time(hour=21))]
+        #self.officeHours = [(datetime.hour(hour=18), datetime.time(hour=21))]
 
     def estop(self):
         for printer in self.printers:
@@ -218,5 +220,7 @@ def parseGCODE(link):
 #spencer.printer.jog(x=5)
 
 #myPrinter.printer.disconnect()
+liminal = Liminal()
 
+liminal.printers[0].printer.jog(z = 10)
 
