@@ -16,7 +16,7 @@ def index():
         body += f"<h3>Bed: {printer.fetchBedTemp()['actual']}</h3>"
         if printer.currentFile != None:
             body += f"<h3>Currently in use by {printer.user}</h3>"
-            #Implement time remaining methods
+            #Implement time remaining methods :)
         else:
             body += f"<h3>Upload your print!<\h3>"
             #Add upload form here
