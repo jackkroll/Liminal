@@ -1,6 +1,6 @@
-from flask import Flask, request, send_file, redirect
+from flask import Flask, request, send_file, redirect, url_for
 from firebase_admin import credentials, initialize_app, storage
-from main import SinglePrinter, Liminal
+from main import IndividualPrint,SinglePrinter, Liminal
 app = Flask(__name__)
 #Left Printer,http://10.110.8.77 ,FCDAE0344C424542B80117AF896B62F6
 #Middle Printer, http://10.110.8.110, 6273C0628B8B47E397CA4554C94F6CD5
@@ -19,6 +19,15 @@ def index():
             #Implement time remaining methods :)
         else:
             body += f"<h3>Upload your print!<\h3>"
+            body += f"""
+<form action="{url_for('/')}" method="post">
+<input type="text" id="firstname" name="fname" placeholder="firstname">
+<label for="printer">Printer:</label>
+<input type="text" id="firstname" name="fname" placeholder="firstname">
+<label for="lastname">Last Name:</label>
+<input type="text" id="lastname" name="lname" placeholder="lastname">
+<button type="submit">Login</button>
+            """
             #Add upload form here
 
 
@@ -42,9 +51,27 @@ def functions():
                 if request.form.get("preheat") == printer.nickname:
                     printer.preheat()
 @app.route('/print', methods = ["GET", "POST"])
+#Form components nessesary:
+#printer : Printer Name ex. Left Printer
+#url : The GCODE URL (from firebase)
+#creator: The name of the uploader
+#material: The name of the filament, currently unused
+#printerCODE: unestablished right now, but is a needed input
+#nickname: The name of the print
 def uploadPrintURL():
     if request.method == "GET":
-        return redirect
+        return redirect(url_for("/"))
+    else:
+        for printer in liminal.printers:
+            if request.form.get("printer") == printer.nickname:
+                # Indivdual Print requirements: file (URL String), creator, material, printerCode, nickname
+                fileURL = request.form.get("url")
+                user = request.form.get("creator")
+                material = request.form.get("material")
+                printerCode = request.form.get("printercode")
+                nickname = request.form.get("nickname")
+                individualPrint = IndividualPrint(fileURL, user, material, printerCode, nickname)
+                printer.upload(individualPrint)
 
 if __name__ == '__main__':
     app.run(debug=True, host="localhost", port= 8000)
