@@ -171,7 +171,8 @@ class Liminal():
         self.printers = [
             #SinglePrinter("Left", "http://10.110.8.77", "FCDAE0344C424542B80117AF896B62F6"),
             #SinglePrinter("Middle", "http://10.110.8.110","6273C0628B8B47E397CA4554C94F6CD5"),
-            SinglePrinter("Right", "http://10.110.8.100", "33A782146A5A48A7B3B9873217BD19AC")]
+            SinglePrinter("Right", "http://10.110.8.100", "33A782146A5A48A7B3B9873217BD19AC")
+            ]
         self.state = "idle"
         self.estimatedBufferTime = 10
         #State Map

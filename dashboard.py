@@ -18,13 +18,21 @@ def index():
             body += f"<h3>Currently in use by {printer.user}</h3>"
             #Implement time remaining methods :)
         else:
+            #Submission requrements:
+            # printer : Printer Name ex. Left Printer
+            # url : The GCODE URL (from firebase)
+            # creator: The name of the uploader
+            # material: The name of the filament, currently unused
+            # printercode: unestablished right now, but is a needed input
+            # nickname: The name of the print
             body += f"<h3>Upload your print!<\h3>"
             body += f"""
-<form action="{url_for('/')}" method="post">
-<input type="text" id="firstname" name="fname" placeholder="firstname">
-<label for="printer">Printer:</label>
-<input type="text" id="firstname" name="fname" placeholder="firstname">
-<label for="lastname">Last Name:</label>
+<form action="{url_for('uploadPrintURL')}" method="post">
+<input type="hidden" name="printer" value="{printer.nickname}">
+<input type="hidden" name="printercode" placeholder="{printer.nickname}">
+<label for="url">GCODE URL:</label>
+<input type="text" id="url" name="url" placeholder="">
+<label for="nickname">Print Name:</label>
 <input type="text" id="lastname" name="lname" placeholder="lastname">
 <button type="submit">Login</button>
             """
@@ -56,7 +64,7 @@ def functions():
 #url : The GCODE URL (from firebase)
 #creator: The name of the uploader
 #material: The name of the filament, currently unused
-#printerCODE: unestablished right now, but is a needed input
+#printercode: unestablished right now, but is a needed input
 #nickname: The name of the print
 def uploadPrintURL():
     if request.method == "GET":
