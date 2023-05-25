@@ -61,8 +61,18 @@ class SinglePrinter():
         #self.printer.home()
         self.user = None
         self.currentFile = None
-
+        self.state = self.printer.state()
+        #operational
+        #paused
+        #printing
+        #pausing
+        #cancelling
+        #sdReady means the printer’s SD card is available and initialized
+        #error
+        #ready
+        #closedOrError means the printer is disconnected (possibly due to an error)
         self.queue = []
+
 
 
     def preheat(self):
