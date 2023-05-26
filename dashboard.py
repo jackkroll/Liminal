@@ -20,7 +20,7 @@ def index():
         else:
             #Submission requrements:
             # printer : Printer Name ex. Left Printer
-            # url : The GCODE URL (from firebase)
+            # Gcode : The GCODE file
             # creator: The name of the uploader
             # material: The name of the filament, currently unused
             # printercode: unestablished right now, but is a needed input
@@ -30,11 +30,11 @@ def index():
 <form action="{url_for('uploadPrintURL')}" method="post">
 <input type="hidden" name="printer" value="{printer.nickname}">
 <input type="hidden" name="printercode" placeholder="{printer.nickname}">
-<label for="url">GCODE URL:</label>
-<input type="text" id="url" name="url" placeholder="">
+<label for="url">GCODE File:</label>
+<input type="file" id="url" name="gcode" accept=".gcode">
 <label for="nickname">Print Name:</label>
 <input type="text" id="lastname" name="lname" placeholder="lastname">
-<button type="submit">Login</button>
+<button type="submit">Upload</button>
             """
             #Add upload form here
 
@@ -73,11 +73,13 @@ def uploadPrintURL():
         for printer in liminal.printers:
             if request.form.get("printer") == printer.nickname:
                 # Indivdual Print requirements: file (URL String), creator, material, printerCode, nickname
-                fileURL = request.form.get("url")
+                gcodeUpload = request.form.get("gcode")
                 user = request.form.get("creator")
                 material = request.form.get("material")
                 printerCode = request.form.get("printercode")
                 nickname = request.form.get("nickname")
+                #fileURL = Set this to a firebase upload
+                fileURL = None
                 individualPrint = IndividualPrint(fileURL, user, material, printerCode, nickname)
                 printer.upload(individualPrint)
 

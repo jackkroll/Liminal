@@ -56,12 +56,18 @@ class SinglePrinter():
         self.state = None
         #Idle, Printing, Offline
        #self.color = color
-        self.printer = make_client(url = url, apikey= key)
-        self.printer.connect()
+        try:
+            self.printer = make_client(url = url, apikey= key)
+            self.printer.connect()
+        except Exception:
+            self.printer = None
         #self.printer.home()
         self.user = None
         self.currentFile = None
-        self.state = self.printer.state()
+        if self.printer != None:
+            self.state = self.printer.state()
+        else:
+            self.state = "offline"
         #operational
         #paused
         #printing
@@ -233,5 +239,4 @@ def parseGCODE(link):
 #myPrinter.printer.disconnect()
 liminal = Liminal()
 
-liminal.printers[0].printer.jog(z = 10)
 
