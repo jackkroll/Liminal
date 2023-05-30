@@ -1,6 +1,9 @@
+import time
+
 from flask import Flask, request, send_file, redirect, url_for
 from firebase_admin import credentials, initialize_app, storage
 from main import IndividualPrint,SinglePrinter, Liminal
+import requests
 app = Flask(__name__)
 #Left Printer,http://10.110.8.77 ,FCDAE0344C424542B80117AF896B62F6
 #Middle Printer, http://10.110.8.110, 6273C0628B8B47E397CA4554C94F6CD5
@@ -25,15 +28,15 @@ def index():
             # material: The name of the filament, currently unused
             # printercode: unestablished right now, but is a needed input
             # nickname: The name of the print
-            body += f"<h3>Upload your print!<\h3>"
+            body += f"<h3>Upload your print!</h3>"
             body += f"""
-<form action="{url_for('uploadPrintURL')}" method="post">
+<form action="{url_for('uploadPrintURL')}" method="post", enctype="multipart/form-data">
 <input type="hidden" name="printer" value="{printer.nickname}">
 <input type="hidden" name="printercode" placeholder="{printer.nickname}">
 <label for="url">GCODE File:</label>
 <input type="file" id="url" name="gcode" accept=".gcode">
 <label for="nickname">Print Name:</label>
-<input type="text" id="lastname" name="lname" placeholder="lastname">
+<input type="text" id="nickname" name="nickname" placeholder="nickname">
 <button type="submit">Upload</button>
             """
             #Add upload form here
@@ -68,7 +71,7 @@ def functions():
 #nickname: The name of the print
 def uploadPrintURL():
     if request.method == "GET":
-        return redirect(url_for("/"))
+        return redirect(url_for("index"))
     else:
         for printer in liminal.printers:
             if request.form.get("printer") == printer.nickname:
@@ -80,8 +83,17 @@ def uploadPrintURL():
                 nickname = request.form.get("nickname")
                 #fileURL = Set this to a firebase upload
                 fileURL = None
-                individualPrint = IndividualPrint(fileURL, user, material, printerCode, nickname)
-                printer.upload(individualPrint)
+                #individualPrint = IndividualPrint(fileURL, user, material, printerCode, nickname)
+                #printer.upload(individualPrint)
+                #print(gcodeUpload)
+                for file in request.files:
+                    print(file)
+                file_contents = request.files["gcode"].stream.read()
+                if nickname == "":
+                    nickname = "Untitled"
+                printer.printer.upload(file=(nickname + ".gcode", file_contents), location="local", print=True)
+                printer.printer.select(location=nickname + ".gcode", print=True)
+                return "Success!"
 
 if __name__ == '__main__':
     app.run(debug=True, host="localhost", port= 8000)
