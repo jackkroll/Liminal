@@ -14,38 +14,38 @@ liminal = Liminal()
 def index():
     body = "<html><body>"
     for printer in liminal.printers:
-        body += f"<h1>{printer.nickname}</h1>"
-        body += f"<h3>Nozzle: {printer.fetchNozzleTemp()['actual']}</h3>"
-        body += f"<h3>Bed: {printer.fetchBedTemp()['actual']}</h3>"
-        if printer.currentFile != None:
-            body += f"<h3>Currently in use by {printer.user}</h3>"
-            #Implement time remaining methods :)
-        else:
-            #Submission requrements:
-            # printer : Printer Name ex. Left Printer
-            # Gcode : The GCODE file
-            # creator: The name of the uploader
-            # material: The name of the filament, currently unused
-            # printercode: unestablished right now, but is a needed input
-            # nickname: The name of the print
-            body += f"<h3>Upload your print!</h3>"
-            body += f"""
-<form action="{url_for('uploadPrintURL')}" method="post", enctype="multipart/form-data">
-<input type="hidden" name="printer" value="{printer.nickname}">
-<input type="hidden" name="printercode" placeholder="{printer.nickname}">
-<label for="url">GCODE File:</label>
-<input type="file" id="url" name="gcode" accept=".gcode">
-<label for="nickname">Print Name:</label>
-<input type="text" id="nickname" name="nickname" placeholder="nickname">
-<button type="submit">Upload</button>
-            """
-            #Add upload form here
+        if printer.printer != None:
+            body += f"<h1>{printer.nickname}</h1>"
+            body += f"<h3>Nozzle: {printer.fetchNozzleTemp()['actual']}</h3>"
+            body += f"<h3>Bed: {printer.fetchBedTemp()['actual']}</h3>"
+            if printer.currentFile != None:
+                body += f"<h3>Currently in use by {printer.user}</h3>"
+                #Implement time remaining methods :)
+            else:
+                #Submission requrements:
+                # printer : Printer Name ex. Left Printer
+                # Gcode : The GCODE file
+                # creator: The name of the uploader
+                # material: The name of the filament, currently unused
+                # printercode: unestablished right now, but is a needed input
+                # nickname: The name of the print
+                body += f"<h3>Upload your print!</h3>"
+                body += f"""
+    <form action="{url_for('uploadPrintURL')}" method="post", enctype="multipart/form-data">
+    <input type="hidden" name="printer" value="{printer.nickname}">
+    <input type="hidden" name="printercode" placeholder="{printer.nickname}">
+    <label for="url">GCODE File:</label>
+    <input type="file" id="url" name="gcode" accept=".gcode">
+    <label for="nickname">Print Name:</label>
+    <input type="text" id="nickname" name="nickname" placeholder="nickname">
+    <button type="submit">Upload</button>
+                """
+                #Add upload form here
 
 
-    body += "</html></body>"
+        body += "</html></body>"
 
-    return body
-
+        return body
 @app.route('/heat', methods = ["GET", "POST"])
 #This defines the webpage that will allow you to preheat printers
 #You can pass ALL to preheat all of them, and an individual name to preheat that one
@@ -86,8 +86,7 @@ def uploadPrintURL():
                 #individualPrint = IndividualPrint(fileURL, user, material, printerCode, nickname)
                 #printer.upload(individualPrint)
                 #print(gcodeUpload)
-                for file in request.files:
-                    print(file)
+
                 file_contents = request.files["gcode"].stream.read()
                 if nickname == "":
                     nickname = "Untitled"

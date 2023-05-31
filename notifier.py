@@ -1,5 +1,5 @@
 import smtplib
-phoneCarrierDedirect = {
+phoneCarrierRedirect = {
     "verizon" : "@vtext.com",
     "at&t": "@txt.att.net",
     "t-mobile": "@tmomail.net",
@@ -8,8 +8,9 @@ phoneCarrierDedirect = {
     "consumer cellular": "@mailmymobile.net"
 }
 
-def send_email(recipient, subject, message):
+def send_email(recipient, carrier,subject, message):
     try:
+        recipient += phoneCarrierRedirect[carrier]
         smtp_port = 587
         server_url = "smtp-relay.sendinblue.com"
         login = "amazingsupdawg@gmail.com"
@@ -35,10 +36,12 @@ def send_email(recipient, subject, message):
 # Get user input
 
 recipient = "2489819464@vtext.com"
+carrier = "verizon"
 subject = "Liminal System Message"
 message = 'Your print, "Example.gcode" ,has finished'
 
+
 # Send the email
-send_email(recipient, subject, message)
+send_email(recipient,carrier, subject, message)
 
 

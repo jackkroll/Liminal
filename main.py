@@ -1,5 +1,4 @@
-import math
-import time, asyncio, os, pytimeparse, datetime, requests, random
+import time, asyncio, os, pytimeparse, datetime, requests, random, math,json
 from datetime import datetime, timedelta
 from octorest import OctoRest
 from firebase_admin import credentials, initialize_app, storage, firestore
@@ -49,8 +48,9 @@ class SinglePrinter():
     """"
     This creates a basic printer class with additional information
     """
-    def __init__(self, nickname, url, key):
+    def __init__(self, nickname, url, key, code):
         self.nickname = nickname
+        self.code = code
         self.url = url
         self.key = key
         self.state = None
@@ -174,11 +174,11 @@ class SinglePrinter():
 class Liminal():
 
     def __init__(self):
-        self.printers = [
-            #SinglePrinter("Left", "http://10.110.8.77", "FCDAE0344C424542B80117AF896B62F6"),
-            #SinglePrinter("Middle", "http://10.110.8.110","6273C0628B8B47E397CA4554C94F6CD5"),
-            SinglePrinter("Right", "http://10.110.8.100", "33A782146A5A48A7B3B9873217BD19AC")
-            ]
+        self.config = json.load(open("config.json"))
+        self.printers = []
+        for item in self.config:
+            if "ipAddress" in self.config[item]:
+                self.printers.append(SinglePrinter(item, self.config[item]["ipAddress"], self.config[item]["apiKey"], self.config[item]["prefix"]))
         self.state = "idle"
         self.estimatedBufferTime = 10
         #State Map
