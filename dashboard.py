@@ -5,10 +5,6 @@ from firebase_admin import credentials, initialize_app, storage
 from main import IndividualPrint,SinglePrinter, Liminal
 import requests
 app = Flask(__name__)
-#Left Printer,http://10.110.8.77 ,FCDAE0344C424542B80117AF896B62F6
-#Middle Printer, http://10.110.8.110, 6273C0628B8B47E397CA4554C94F6CD5
-#Right Printer,http://10.110.8.100 ,33A782146A5A48A7B3B9873217BD19AC
-#printers = [SinglePrinter("Left Printer", "http://10.110.8.77","FCDAE0344C424542B80117AF896B62F6"),SinglePrinter("Middle Printer", "http://10.110.8.110","6273C0628B8B47E397CA4554C94F6CD5"),SinglePrinter("Right Printer", "http://10.110.8.100","33A782146A5A48A7B3B9873217BD19AC")]
 liminal = Liminal()
 @app.route('/')
 def index():
@@ -45,7 +41,7 @@ def index():
 
         body += "</html></body>"
 
-        return body
+    return body
 @app.route('/heat', methods = ["GET", "POST"])
 #This defines the webpage that will allow you to preheat printers
 #You can pass ALL to preheat all of them, and an individual name to preheat that one
@@ -95,4 +91,4 @@ def uploadPrintURL():
                 return "Success!"
 
 if __name__ == '__main__':
-    app.run(debug=True, host="localhost", port= 8000)
+    app.run(debug=True, host="0.0.0.0", port= 8000)

@@ -238,5 +238,6 @@ def parseGCODE(link):
 
 #myPrinter.printer.disconnect()
 liminal = Liminal()
+print(liminal.printers)
 
 
