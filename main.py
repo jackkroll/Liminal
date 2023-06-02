@@ -66,6 +66,7 @@ class SinglePrinter():
         self.currentFile = None
         if self.printer != None:
             self.state = self.printer.state()
+
         else:
             self.state = "offline"
         #operational
@@ -123,6 +124,11 @@ class SinglePrinter():
         return self.printer.tool(history = True, limit = 1)["tool0"]
     def fetchBedTemp(self):
         return self.printer.bed(history = True, limit = 1)["bed"]
+    def fetchTimeRemaining(self):
+        '''
+        Returns time remaining in seconds
+        '''
+        return self.printer.job_info()["progress"]["printTimeLeft"]
 
     def scheduler(self, gcode: IndividualPrint, requestedTime):
         times = []

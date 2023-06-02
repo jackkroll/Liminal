@@ -1,3 +1,4 @@
+import datetime
 import time
 
 from flask import Flask, request, send_file, redirect, url_for
@@ -8,14 +9,24 @@ app = Flask(__name__)
 liminal = Liminal()
 @app.route('/')
 def index():
-    body = "<html><body>"
+    body = "<html><body style = background-color:black>"
+    body += """
+    <head>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter">
+    </head>
+    <style>
+    body {
+  font-family: "Inter", sans-serif;
+    }
+    </style>
+    """
     for printer in liminal.printers:
         if printer.printer != None:
-            body += f"<h1>{printer.nickname}</h1>"
-            body += f"<h3>Nozzle: {printer.fetchNozzleTemp()['actual']}</h3>"
-            body += f"<h3>Bed: {printer.fetchBedTemp()['actual']}</h3>"
-            if printer.currentFile != None:
-                body += f"<h3>Currently in use by {printer.user}</h3>"
+            body += f'<h1 style="color:coral;">{printer.nickname}</h1>'
+            body += f'<h3 style="color:white;">Nozzle: {printer.fetchNozzleTemp()["actual"]}</h3>'
+            body += f'<h3 style="color:white;">Bed: {printer.fetchBedTemp()["actual"]}</h3>'
+            if "printing" in printer.state.lower():
+                body += f'<h3 style="color:white;">Currently in use | {int(printer.fetchTimeRemaining()/60)} Minutes left</h3>'
                 #Implement time remaining methods :)
             else:
                 #Submission requrements:
@@ -25,9 +36,8 @@ def index():
                 # material: The name of the filament, currently unused
                 # printercode: unestablished right now, but is a needed input
                 # nickname: The name of the print
-                body += f"<h3>Upload your print!</h3>"
                 body += f"""
-    <form action="{url_for('uploadPrintURL')}" method="post", enctype="multipart/form-data">
+    <form style="color:white; action="{url_for('uploadPrintURL')}" method="post", enctype="multipart/form-data">
     <input type="hidden" name="printer" value="{printer.nickname}">
     <input type="hidden" name="printercode" placeholder="{printer.nickname}">
     <label for="url">GCODE File:</label>
@@ -39,7 +49,7 @@ def index():
                 #Add upload form here
 
 
-        body += "</html></body>"
+        body += "</body></html>"
 
     return body
 @app.route('/heat', methods = ["GET", "POST"])
