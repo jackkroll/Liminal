@@ -3,4 +3,3 @@ firebase-admin~=6.1.0
 flask~=2.3.2
 requests~=2.30.0
 octorest~=0.4
-celery~=5.2.7
