@@ -1,6 +1,7 @@
-import time, asyncio, os, pytimeparse, datetime, requests, random, math,json
+import time, asyncio, os, pytimeparse, datetime, requests, random, math,json, celery
 from datetime import datetime, timedelta
 from octorest import OctoRest
+from celery import Celery,Task
 from firebase_admin import credentials, initialize_app, storage, firestore
 
 #db = firestore.client()
@@ -187,13 +188,27 @@ class Liminal():
                 self.printers.append(SinglePrinter(item, self.config[item]["ipAddress"], self.config[item]["apiKey"], self.config[item]["prefix"]))
         self.state = "idle"
         self.estimatedBufferTime = 10
+        self.approvalCode = "null"
+        self.lastGenerated = None
+
+
         #State Map
         #Idle: All printers are OK, nothing printing
         #Printing: One or more printers are ongoing, printers OK
         #Error: The printers detected an issue, no connection or other
         #Stop: All printers have been immediately e-stopped
         #self.officeHours = [(datetime.hour(hour=18), datetime.time(hour=21))]
-
+    async def genNewApprovalCode(self):
+        while True:
+            uuid = ""
+            letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+                           'w', 'x', 'y', 'z']
+            for i in range(4):
+                uuid += random.choice(letters).upper()
+            self.approvalCode = uuid
+            self.lastGenerated = datetime.now()
+            print(uuid)
+            await asyncio.sleep(10)
     def estop(self):
         for printer in self.printers:
             printer.abort()
@@ -243,6 +258,8 @@ def parseGCODE(link):
 #spencer.printer.jog(x=5)
 
 #myPrinter.printer.disconnect()
+
+#Sort by queued prints and if time is now or past and state is unchanged, queue to print on printer
 liminal = Liminal()
 print(liminal.printers)
 

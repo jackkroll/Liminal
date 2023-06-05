@@ -14,7 +14,7 @@ def send_email(recipient, carrier,subject, message):
         smtp_port = 587
         server_url = "smtp-relay.sendinblue.com"
         login = "amazingsupdawg@gmail.com"
-        password = "ommitted"
+        password = "Yz961pUVqy0vgjcO"
         # Connect to the SMTP server
         server = smtplib.SMTP(server_url, smtp_port)
         server.starttls()

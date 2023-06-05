@@ -1,4 +1,5 @@
 import datetime
+import json
 import time
 
 from flask import Flask, request, send_file, redirect, url_for
@@ -7,8 +8,12 @@ from main import IndividualPrint,SinglePrinter, Liminal
 import requests
 app = Flask(__name__)
 liminal = Liminal()
+
 @app.route('/')
 def index():
+    file = open("values.json")
+    jsonValues = json.load(file)
+    file.close()
     body = "<html><body style = background-color:black>"
     body += """
     <head>
@@ -21,10 +26,11 @@ def index():
     </style>
     """
     for printer in liminal.printers:
-        if printer.printer != None:
+        if printer.printer != None and printer.code not in jsonValues["printersDown"]:
             body += f'<h1 style="color:coral;">{printer.nickname}</h1>'
             body += f'<h3 style="color:white;">Nozzle: {printer.fetchNozzleTemp()["actual"]}</h3>'
             body += f'<h3 style="color:white;">Bed: {printer.fetchBedTemp()["actual"]}</h3>'
+            body += f'{printer.state}'
             if "printing" in printer.state.lower():
                 body += f'<h3 style="color:white;">Currently in use | {int(printer.fetchTimeRemaining()/60)} Minutes left</h3>'
                 #Implement time remaining methods :)
@@ -46,7 +52,6 @@ def index():
     <input type="text" id="nickname" name="nickname" placeholder="nickname">
     <button type="submit">Upload</button>
                 """
-                #Add upload form here
 
 
         body += "</body></html>"
@@ -99,6 +104,68 @@ def uploadPrintURL():
                 printer.printer.upload(file=(nickname + ".gcode", file_contents), location="local", print=True)
                 printer.printer.select(location=nickname + ".gcode", print=True)
                 return "Success!"
+@app.route('/dev/online',methods = ["GET", "POST"])
+def setPrinterOnline():
+    if request.method == "GET":
+        return redirect(url_for("setPrinterStatus"))
+    else:
+        with open("values.json", "r") as f:
+            setOnline = request.form.get("printer")
+            jsonValues = json.load(f)
+            jsonValues["printersDown"].remove(setOnline)
+        with open("values.json", "w") as f:
+            json.dump(jsonValues,f,indent=4)
+        return redirect(url_for("setPrinterStatus"))
 
+@app.route('/dev/offline',methods = ["GET", "POST"])
+def setPrinterOffline():
+    if request.method == "GET":
+        return redirect(url_for("setPrinterStatus"))
+    else:
+        with open("values.json", "r") as f:
+            setOnline = request.form.get("printer")
+            jsonValues = json.load(f)
+            jsonValues["printersDown"].append(setOnline)
+        with open("values.json", "w") as f:
+            json.dump(jsonValues, f, indent=4)
+        return redirect(url_for("setPrinterStatus"))
+@app.route('/dev',methods = ["GET"])
+def setPrinterStatus():
+    file = open("values.json")
+    jsonValues = json.load(file)
+    file.close()
+    if request.method == "GET":
+        body = "<html><body style = background-color:black>"
+        body += """
+                    <head>
+                    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter">
+                    </head>
+                    <style>
+                    body {
+                  font-family: "Inter", sans-serif;
+                    }
+                    </style>
+                    """
+        body += '<h1 style="color:coral"> Currently Online </h1>'
+        for printer in liminal.printers:
+            if printer.code not in jsonValues["printersDown"]:
+                body += f'<h3 style="color:white"> {printer.nickname} </h3>'
+                body += f"""
+                        <form style="color:white" action="{url_for('setPrinterOffline')}" method="post", enctype="multipart/form-data">
+                        <input type="hidden" name="printer" value="{printer.code}">
+                        <button type="submit">Switch Offline</button>
+                        </form>
+                        """
+        body += '<h1 style="color:coral"> Currently Offline </h1>'
+        for printer in liminal.printers:
+            if printer.code in jsonValues["printersDown"]:
+                body += f'<h3 style="color:white"> {printer.nickname} </h3>'
+                body += f"""
+                    <form style="color:white" action="{url_for('setPrinterOnline')}" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="printer" value="{printer.code}">
+                    <button type="submit">Switch Online</button>
+                    </form>
+                                """
+        return body
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port= 8000)
