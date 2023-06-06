@@ -14,6 +14,10 @@ def index():
     file = open("values.json")
     jsonValues = json.load(file)
     file.close()
+
+    file = open("config.json")
+    config = json.load(file)
+    file.close()
     body = "<html><body style = background-color:black>"
     body += """
     <head>
@@ -28,8 +32,12 @@ def index():
     for printer in liminal.printers:
         if printer.printer != None and printer.code not in jsonValues["printersDown"]:
             body += f'<h1 style="color:coral;">{printer.nickname}</h1>'
-            body += f'<h3 style="color:white;">Nozzle: {printer.fetchNozzleTemp()["actual"]}</h3>'
-            body += f'<h3 style="color:white;">Bed: {printer.fetchBedTemp()["actual"]}</h3>'
+            if config[printer.nickname]["camActive"]:
+                body += f'<img src="{config[printer.nickname]["webcamURL"]}" alt="Video Stream">'
+            if printer.fetchNozzleTemp() != None:
+                body += f'<h3 style="color:white;">Nozzle: {printer.fetchNozzleTemp()["actual"]}</h3>'
+            if printer.fetchBedTemp() != None:
+                body += f'<h3 style="color:white;">Bed: {printer.fetchBedTemp()["actual"]}</h3>'
             body += f'{printer.state}'
             if "printing" in printer.state.lower():
                 body += f'<h3 style="color:white;">Currently in use | {int(printer.fetchTimeRemaining()/60)} Minutes left</h3>'
@@ -43,7 +51,7 @@ def index():
                 # printercode: unestablished right now, but is a needed input
                 # nickname: The name of the print
                 body += f"""
-    <form style="color:white; action="{url_for('uploadPrintURL')}" method="post", enctype="multipart/form-data">
+    <form style="color:white" action="{url_for('uploadPrintURL')}" method="post" enctype="multipart/form-data">
     <input type="hidden" name="printer" value="{printer.nickname}">
     <input type="hidden" name="printercode" placeholder="{printer.nickname}">
     <label for="url">GCODE File:</label>

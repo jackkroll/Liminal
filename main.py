@@ -1,7 +1,6 @@
-import time, asyncio, os, pytimeparse, datetime, requests, random, math,json, celery
+import time, asyncio, os, pytimeparse, datetime, requests, random, math,json
 from datetime import datetime, timedelta
 from octorest import OctoRest
-from celery import Celery,Task
 from firebase_admin import credentials, initialize_app, storage, firestore
 
 #db = firestore.client()
