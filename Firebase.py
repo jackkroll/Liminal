@@ -8,9 +8,10 @@ cred = credentials.Certificate('C:\\Users\\HS.Robotics\\Downloads\\liminal-302-c
 initialize_app(cred, {'storageBucket': 'liminal-302.appspot.com'})
 
 bucket = storage.bucket()
-async def upload():
+def upload():
     fileName = ("C:\\Users\\HS.Robotics\\Downloads\\SpEnCer.PNG")
     blob = bucket.blob(fileName)
+    blob.upload_from_string()
     blob.upload_from_filename(fileName)
     blob.make_public()
     print("your file url", blob.public_url)

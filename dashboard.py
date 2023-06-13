@@ -5,10 +5,16 @@ import time
 from flask import Flask, request, send_file, redirect, url_for
 from firebase_admin import credentials, initialize_app, storage
 from main import IndividualPrint,SinglePrinter, Liminal
+import firebase_admin
+from firebase_admin import credentials, firestore
 import requests
 app = Flask(__name__)
 liminal = Liminal()
 
+
+bucket = storage.bucket()
+db = firestore.client()
+prints_ref = db.collection('prints')
 @app.route('/')
 def index():
     file = open("values.json")
@@ -53,7 +59,9 @@ def index():
                 body += f"""
     <form style="color:white" action="{url_for('uploadPrintURL')}" method="post" enctype="multipart/form-data">
     <input type="hidden" name="printer" value="{printer.nickname}">
-    <input type="hidden" name="printercode" placeholder="{printer.nickname}">
+    <input type="hidden" name="printercode" placeholder="{printer.code}">
+    <input type="hidden" name="creator" placeholder="notSet">
+    <input type="hidden" name="material" placeholder="notSet">
     <label for="url">GCODE File:</label>
     <input type="file" id="url" name="gcode" accept=".gcode">
     <label for="nickname">Print Name:</label>
@@ -100,9 +108,8 @@ def uploadPrintURL():
                 material = request.form.get("material")
                 printerCode = request.form.get("printercode")
                 nickname = request.form.get("nickname")
-                #fileURL = Set this to a firebase upload
-                fileURL = None
-                #individualPrint = IndividualPrint(fileURL, user, material, printerCode, nickname)
+
+
                 #printer.upload(individualPrint)
                 #print(gcodeUpload)
 
@@ -111,6 +118,24 @@ def uploadPrintURL():
                     nickname = "Untitled"
                 printer.printer.upload(file=(nickname + ".gcode", file_contents), location="local", print=True)
                 printer.printer.select(location=nickname + ".gcode", print=True)
+                blob = bucket.blob("testing")
+                blob.upload_from_string(file_contents)
+                blob.make_public()
+                print(blob.public_url)
+                fileURL = blob.public_url
+                individualPrint = IndividualPrint(fileURL, user, material, printerCode, nickname)
+                print("made it here")
+                doc_ref = db.collection('prints').document(individualPrint.uuid)
+                print("made it further")
+                doc_ref.set({
+                    'gcode': individualPrint.file,
+                    'creator': individualPrint.creator,
+                    'material': individualPrint.material,
+                    'printerCode': individualPrint.printerCode,
+                    'nickname': individualPrint.nickname,
+                    'uuid': individualPrint.uuid
+                })
+                print("made it all the way")
                 return "Success!"
 @app.route('/dev/online',methods = ["GET", "POST"])
 def setPrinterOnline():
