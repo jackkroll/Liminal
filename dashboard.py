@@ -1,6 +1,8 @@
 import datetime
 import json
+import random
 import time
+import string
 
 from flask import Flask, request, send_file, redirect, url_for
 from firebase_admin import credentials, initialize_app, storage
@@ -59,14 +61,14 @@ def index():
                 body += f"""
     <form style="color:white" action="{url_for('uploadPrintURL')}" method="post" enctype="multipart/form-data">
     <input type="hidden" name="printer" value="{printer.nickname}">
-    <input type="hidden" name="printercode" placeholder="{printer.code}">
+    <input type="hidden" name="printercode" value="{printer.code}">
     <input type="hidden" name="creator" placeholder="notSet">
     <input type="hidden" name="material" placeholder="notSet">
     <label for="url">GCODE File:</label>
     <input type="file" id="url" name="gcode" accept=".gcode">
     <label for="nickname">Print Name:</label>
     <input type="text" id="nickname" name="nickname" placeholder="nickname">
-    <button type="submit">Upload</button>
+    <button type="submit">Upload</button></form>
                 """
 
 
@@ -114,13 +116,22 @@ def uploadPrintURL():
                 #print(gcodeUpload)
 
                 file_contents = request.files["gcode"].stream.read()
+                print(request.files.get("gcode"))
+
+                print(file_contents)
                 if nickname == "":
                     nickname = "Untitled"
                 printer.printer.upload(file=(nickname + ".gcode", file_contents), location="local", print=True)
                 printer.printer.select(location=nickname + ".gcode", print=True)
-                blob = bucket.blob("testing")
+                #Ensures a .00000000000000000000010661449% change of a UUID collision
+                chars = list(string.ascii_lowercase + string.ascii_uppercase + string.digits)
+                blobName = ""
+                for i in range(0,15):
+                    blobName += random.choice(chars)
+                blob = bucket.blob(blobName)
                 blob.upload_from_string(file_contents)
                 blob.make_public()
+
                 print(blob.public_url)
                 fileURL = blob.public_url
                 individualPrint = IndividualPrint(fileURL, user, material, printerCode, nickname)

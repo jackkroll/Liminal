@@ -46,13 +46,14 @@ class IndividualPrint():
             query_ref = prints_ref.where('id', '==', uuid)
             print("creaing uuid")
             print(passed_check)
-            print(query_ref.count)
-            if query_ref.count == 0:
+            print(query_ref.get())
+            print(len(query_ref.get()))
+            if len(query_ref.get()) == 0:
                 passed_check = True
             else:
                 print(query_ref.count)
 
-        self.uuid = printerCode.upper() + uuid
+        self.uuid = uuid
 class SinglePrinter():
     """"
     This creates a basic printer class with additional information
@@ -137,7 +138,10 @@ class SinglePrinter():
         '''
         Returns time remaining in seconds
         '''
-        return self.printer.job_info()["progress"]["printTimeLeft"]
+        if self.printer.job_info()["progress"]["printTimeLeft"] != None:
+            return self.printer.job_info()["progress"]["printTimeLeft"]
+        else:
+            return -60
 
     def scheduler(self, gcode: IndividualPrint, requestedTime):
         times = []
