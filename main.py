@@ -30,7 +30,6 @@ class IndividualPrint():
         self.material = material
         gcodeData = parseGCODE(file)[1]
         #TIME TO PRINT IS IN
-        print(gcodeData)
         #self.timeToPrint = gcodeData[1]
         #self.nozzle = gcodeData[0]
         self.printerCode = printerCode.upper()
@@ -43,6 +42,10 @@ class IndividualPrint():
              'w', 'x', 'y', 'z']
             for i in range(3):
                 uuid += random.choice(letters).upper()
+
+            current_year = datetime.now().year
+            two_letter_year = str(current_year)[2:]
+            uuid += two_letter_year
             query_ref = prints_ref.where('id', '==', uuid)
             print("creaing uuid")
             print(passed_check)
@@ -195,6 +198,7 @@ class Liminal():
     def __init__(self):
         self.config = json.load(open("config.json"))
         self.printers = []
+        self.accounts = list(self.config["students"].keys())
         for item in self.config:
             if "ipAddress" in self.config[item]:
                 self.printers.append(SinglePrinter(item, self.config[item]["ipAddress"], self.config[item]["apiKey"], self.config[item]["prefix"]))

@@ -46,8 +46,8 @@ def index():
                 body += f'<h3 style="color:white;">Nozzle: {printer.fetchNozzleTemp()["actual"]}</h3>'
             if printer.fetchBedTemp() != None:
                 body += f'<h3 style="color:white;">Bed: {printer.fetchBedTemp()["actual"]}</h3>'
-            body += f'{printer.state}'
             if "printing" in printer.state.lower():
+                print(printer.state)
                 body += f'<h3 style="color:white;">Currently in use | {int(printer.fetchTimeRemaining()/60)} Minutes left</h3>'
                 #Implement time remaining methods :)
             else:
@@ -58,21 +58,29 @@ def index():
                 # material: The name of the filament, currently unused
                 # printercode: unestablished right now, but is a needed input
                 # nickname: The name of the print
+                #<input type="hidden" name="creator" placeholder="notSet">
                 body += f"""
     <form style="color:white" action="{url_for('uploadPrintURL')}" method="post" enctype="multipart/form-data">
     <input type="hidden" name="printer" value="{printer.nickname}">
     <input type="hidden" name="printercode" value="{printer.code}">
-    <input type="hidden" name="creator" placeholder="notSet">
-    <input type="hidden" name="material" placeholder="notSet">
-    <label for="url">GCODE File:</label>
-    <input type="file" id="url" name="gcode" accept=".gcode">
-    <label for="nickname">Print Name:</label>
-    <input type="text" id="nickname" name="nickname" placeholder="nickname">
-    <button type="submit">Upload</button></form>
+    <label for="creator">Uploader</label>
+    <select name="creator" id="creator">
+    """
+                for account in liminal.accounts:
+                    body += f'<option value="{account}">{account}</option>'
+                body += f"""
+                </select>
+                <input type="hidden" name="material" placeholder="notSet">
+                <label for="url">GCODE File:</label>
+                <input type="file" id="url" name="gcode" accept=".gcode">
+                <label for="nickname">Print Name:</label>
+                <input type="text" id="nickname" name="nickname" placeholder="nickname">
+                <button type="submit">Upload</button>
+                </form>
                 """
 
 
-        body += "</body></html>"
+    body += "</body></html>"
 
     return body
 @app.route('/heat', methods = ["GET", "POST"])
@@ -144,7 +152,8 @@ def uploadPrintURL():
                     'material': individualPrint.material,
                     'printerCode': individualPrint.printerCode,
                     'nickname': individualPrint.nickname,
-                    'uuid': individualPrint.uuid
+                    'uuid': individualPrint.uuid,
+                    'year': individualPrint.uuid[-2::]
                 })
                 print("made it all the way")
                 return "Success!"
