@@ -124,9 +124,7 @@ def uploadPrintURL():
                 #print(gcodeUpload)
 
                 file_contents = request.files["gcode"].stream.read()
-                print(request.files.get("gcode"))
 
-                print(file_contents)
                 if nickname == "":
                     nickname = "Untitled"
                 printer.printer.upload(file=(nickname + ".gcode", file_contents), location="local", print=True)
@@ -140,12 +138,12 @@ def uploadPrintURL():
                 blob.upload_from_string(file_contents)
                 blob.make_public()
 
-                print(blob.public_url)
+
                 fileURL = blob.public_url
                 individualPrint = IndividualPrint(fileURL, user, material, printerCode, nickname)
-                print("made it here")
+
                 doc_ref = db.collection('prints').document(individualPrint.uuid)
-                print("made it further")
+
                 doc_ref.set({
                     'gcode': individualPrint.file,
                     'creator': individualPrint.creator,
@@ -153,10 +151,46 @@ def uploadPrintURL():
                     'printerCode': individualPrint.printerCode,
                     'nickname': individualPrint.nickname,
                     'uuid': individualPrint.uuid,
-                    'year': individualPrint.uuid[-2::]
+                    'year': individualPrint.uuid[-2::],
+                    'created': firestore.SERVER_TIMESTAMP
                 })
-                print("made it all the way")
+
                 return "Success!"
+@app.route('/db')
+def database():
+    allPrints = prints_ref.get()
+    body = ""
+    for singlePrint in allPrints:
+        printData = singlePrint.to_dict()
+        try:
+            body += f"""
+            <h1>{printData["nickname"]} by {printData["creator"]} at {printData["created"].strftime('%Y-%m-%d %H:%M:%S')}</h1>
+            <a download href="{printData["gcode"]}">View GCODE</a>
+            """
+        except KeyError:
+            body += f"""
+            <h1>Document too old</h1>
+            """
+    return body
+@app.route('/search/<id>')
+def search(id):
+    print(id)
+    query_ref = prints_ref.where('uuid', '==', id).get()
+    body = ""
+    for singlePrint in query_ref:
+        printData = singlePrint.to_dict()
+        print(singlePrint.to_dict())
+        try:
+            body += f"""
+            <h1>{printData["nickname"]} by {printData["creator"]} at {printData["created"].strftime('%Y-%m-%d %H:%M:%S')}</h1>
+            <a download href="{printData["gcode"]}">View GCODE</a>
+            """
+        except KeyError:
+            body += f"""
+            <h1>Document too old</h1>
+            """
+    return body
+
 @app.route('/dev/online',methods = ["GET", "POST"])
 def setPrinterOnline():
     if request.method == "GET":

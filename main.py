@@ -46,11 +46,8 @@ class IndividualPrint():
             current_year = datetime.now().year
             two_letter_year = str(current_year)[2:]
             uuid += two_letter_year
-            query_ref = prints_ref.where('id', '==', uuid)
-            print("creaing uuid")
-            print(passed_check)
-            print(query_ref.get())
-            print(len(query_ref.get()))
+            query_ref = prints_ref.where('uuid', '==', uuid)
+
             if len(query_ref.get()) == 0:
                 passed_check = True
             else:
