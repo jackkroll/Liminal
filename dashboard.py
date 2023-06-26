@@ -37,6 +37,15 @@ def index():
     }
     </style>
     """
+
+    body += """
+    <div class="topnav">
+  <a class="active" href="">Home</a>
+  <a href="dev">Developer Portal</a>
+  <a href="db">Database</a>
+</div>
+    
+    """
     for printer in liminal.printers:
         if printer.printer != None and printer.code not in jsonValues["printersDown"]:
             body += f'<h1 style="color:coral;">{printer.nickname}</h1>'
@@ -160,6 +169,14 @@ def uploadPrintURL():
 def database():
     allPrints = prints_ref.get()
     body = ""
+    body += """
+    <form action="/map" method="post" enctype="multipart/form-data">
+  <label for="id">Enter code:</label><br>
+  <input type="text" id="id" name="id" value=""><br>
+  <input type="submit" value="Submit">
+</form> 
+    
+    """
     for singlePrint in allPrints:
         printData = singlePrint.to_dict()
         try:
@@ -190,6 +207,11 @@ def search(id):
             <h1>Document too old</h1>
             """
     return body
+
+@app.route('/map', methods = ["POST"])
+def map():
+    id = request.form.get("id")
+    return redirect(f"/search/{id}")
 
 @app.route('/dev/online',methods = ["GET", "POST"])
 def setPrinterOnline():
