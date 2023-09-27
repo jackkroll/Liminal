@@ -1,9 +1,10 @@
-import time, asyncio, os, pytimeparse, datetime, requests, random, math,json
+import time, asyncio, os, pytimeparse, datetime, requests, random, math,json, socket
 from datetime import datetime, timedelta
 from octorest import OctoRest
 from firebase_admin import credentials, initialize_app, storage, firestore
 import firebase_admin
 from firebase_admin import credentials
+
 
 cred = credentials.Certificate(r"C:\Users\LOKrollJ51\Downloads\liminal-302-firebase-adminsdk-u4wul-dca5458090.json")
 firebase_admin.initialize_app(cred,{'storageBucket': 'liminal-302.appspot.com'})
@@ -69,6 +70,8 @@ class SinglePrinter():
         try:
             self.printer = make_client(url = url, apikey= key)
             self.printer.connect()
+            ipAddr = socket.gethostbyname(socket.gethostname())
+            self.printer.gcode(f"M117 {ipAddr}")
         except Exception:
             self.printer = None
         #self.printer.home()
@@ -115,6 +118,13 @@ class SinglePrinter():
         self.printer.select(location= fileName, print= True)
         self.currentFile = file_contents
         self.user = uploader
+
+    def displayMSG(self, message):
+        """
+        Allows you to display text onto the printer
+        """
+        self.printer.gcode(f"M117 {message}")
+        
     def upload(self, print : IndividualPrint):
         """
         Uploads using a IndividualPrint Object
