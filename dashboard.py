@@ -49,6 +49,7 @@ def index():
     for printer in liminal.printers:
         if printer.printer != None and printer.code not in jsonValues["printersDown"]:
             body += f'<h1 style="color:coral;">{printer.nickname}</h1>'
+            body += f'<form action = "{url_for("functions")} method = post>  <input type = "submit" value = "Preheat" /> </form>"'
             if config[printer.nickname]["camActive"]:
                 body += f'<img src="{config[printer.nickname]["webcamURL"]}" alt="Video Stream">'
             if printer.fetchNozzleTemp() != None:
@@ -56,7 +57,6 @@ def index():
             if printer.fetchBedTemp() != None:
                 body += f'<h3 style="color:white;">Bed: {printer.fetchBedTemp()["actual"]}</h3>'
             if "printing" in printer.state.lower():
-                print(printer.state)
                 body += f'<h3 style="color:white;">Currently in use | {int(printer.fetchTimeRemaining()/60)} Minutes left</h3>'
                 #Implement time remaining methods :)
             else:
@@ -238,6 +238,11 @@ def setPrinterOffline():
         with open("values.json", "w") as f:
             json.dump(jsonValues, f, indent=4)
         return redirect(url_for("setPrinterStatus"))
+
+@app.route('/emergency/stop', methods = ["POST"])
+def emergencyStopWeb():
+    liminal.estop()
+    return "Printers Stopping"
 @app.route('/dev',methods = ["GET"])
 def setPrinterStatus():
     file = open("values.json")
@@ -276,5 +281,6 @@ def setPrinterStatus():
                     </form>
                                 """
         return body
+    
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port= 8000)
