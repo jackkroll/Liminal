@@ -43,6 +43,7 @@ def index():
   <a class="active" href="">Home</a>
   <a href="dev">Developer Portal</a>
   <a href="db">Database</a>
+  <a href="2FA">Regen 2FA Code</a>
 </div>
     
     """
@@ -84,6 +85,8 @@ def index():
                 <input type="file" id="url" name="gcode" accept=".gcode">
                 <label for="nickname">Print Name:</label>
                 <input type="text" id="nickname" name="nickname" placeholder="nickname">
+                <label for="approval">Approval Code:</label>
+                <input type="text" id="approval" name="2FA" placeholder="2FA">
                 <button type="submit">Upload</button>
                 </form>
                 """
@@ -119,52 +122,55 @@ def uploadPrintURL():
     if request.method == "GET":
         return redirect(url_for("index"))
     else:
-        for printer in liminal.printers:
-            if request.form.get("printer") == printer.nickname:
-                # Indivdual Print requirements: file (URL String), creator, material, printerCode, nickname
-                gcodeUpload = request.form.get("gcode")
-                user = request.form.get("creator")
-                material = request.form.get("material")
-                printerCode = request.form.get("printercode")
-                nickname = request.form.get("nickname")
+        if request.form.get("approval").lower() == liminal.approvalCode and (datetime.datetime.now() - liminal.lastGenerated).minute <= 5:
+            for printer in liminal.printers:
+                if request.form.get("printer") == printer.nickname:
+                    # Indivdual Print requirements: file (URL String), creator, material, printerCode, nickname
+                    gcodeUpload = request.form.get("gcode")
+                    user = request.form.get("creator")
+                    material = request.form.get("material")
+                    printerCode = request.form.get("printercode")
+                    nickname = request.form.get("nickname")
 
 
-                #printer.upload(individualPrint)
-                #print(gcodeUpload)
+                    #printer.upload(individualPrint)
+                    #print(gcodeUpload)
 
-                file_contents = request.files["gcode"].stream.read()
+                    file_contents = request.files["gcode"].stream.read()
 
-                if nickname == "":
-                    nickname = "Untitled"
-                printer.printer.upload(file=(nickname + ".gcode", file_contents), location="local", print=True)
-                printer.printer.select(location=nickname + ".gcode", print=True)
-                #Ensures a .00000000000000000000010661449% change of a UUID collision
-                chars = list(string.ascii_lowercase + string.ascii_uppercase + string.digits)
-                blobName = ""
-                for i in range(0,15):
-                    blobName += random.choice(chars)
-                blob = bucket.blob(blobName)
-                blob.upload_from_string(file_contents)
-                blob.make_public()
+                    if nickname == "":
+                        nickname = "Untitled"
+                    printer.printer.upload(file=(nickname + ".gcode", file_contents), location="local", print=True)
+                    printer.printer.select(location=nickname + ".gcode", print=True)
+                    #Ensures a .00000000000000000000010661449% change of a UUID collision
+                    chars = list(string.ascii_lowercase + string.ascii_uppercase + string.digits)
+                    blobName = ""
+                    for i in range(0,15):
+                        blobName += random.choice(chars)
+                    blob = bucket.blob(blobName)
+                    blob.upload_from_string(file_contents)
+                    blob.make_public()
 
 
-                fileURL = blob.public_url
-                individualPrint = IndividualPrint(fileURL, user, material, printerCode, nickname)
+                    fileURL = blob.public_url
+                    individualPrint = IndividualPrint(fileURL, user, material, printerCode, nickname)
 
-                doc_ref = db.collection('prints').document(individualPrint.uuid)
+                    doc_ref = db.collection('prints').document(individualPrint.uuid)
 
-                doc_ref.set({
-                    'gcode': individualPrint.file,
-                    'creator': individualPrint.creator,
-                    'material': individualPrint.material,
-                    'printerCode': individualPrint.printerCode,
-                    'nickname': individualPrint.nickname,
-                    'uuid': individualPrint.uuid,
-                    'year': individualPrint.uuid[-2::],
-                    'created': firestore.SERVER_TIMESTAMP
-                })
+                    doc_ref.set({
+                        'gcode': individualPrint.file,
+                        'creator': individualPrint.creator,
+                        'material': individualPrint.material,
+                        'printerCode': individualPrint.printerCode,
+                        'nickname': individualPrint.nickname,
+                        'uuid': individualPrint.uuid,
+                        'year': individualPrint.uuid[-2::],
+                        'created': firestore.SERVER_TIMESTAMP
+                    })
 
-                return "Success!"
+                    return f"Your print was successfully uploaded and documented. The unique code for your print is: {individualPrint.uuid}"
+        else:
+            return "The approval code is expired or incorrect"
 @app.route('/db')
 def database():
     allPrints = prints_ref.get()
@@ -243,6 +249,19 @@ def setPrinterOffline():
 def emergencyStopWeb():
     liminal.estop()
     return "Printers Stopping"
+@app.route('/2FA')
+def TwoFA(printer):
+    liminal.genNewApprovalCode()
+    expTime = (liminal.lastGenerated + datetime.timedelta(minutes = 5))
+    for printer in liminal.printers:
+        printer.displayMSG(f"{liminal.approvalCode} EXP: {(expTime.time())}")
+    return redirect(url_for("index"))
+
+@app.route('/clearDisplays')
+def clean():
+    for printer in liminal.printers:
+        printer.displayMSG(f"")
+    return redirect(url_for("index"))
 @app.route('/dev',methods = ["GET"])
 def setPrinterStatus():
     file = open("values.json")
@@ -280,6 +299,7 @@ def setPrinterStatus():
                     <button type="submit">Switch Online</button>
                     </form>
                                 """
+        body += f'<a href="{url_for(clean)}">Clear all displays</a>'
         return body
     
 if __name__ == '__main__':
