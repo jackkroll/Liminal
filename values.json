@@ -1,8 +1,0 @@
-{
-    "requiresApproval": true,
-    "approvalNumbers": [
-        "123-456-7890"
-    ],
-    "approvalCode": "AAAA",
-    "printersDown": []
-}
