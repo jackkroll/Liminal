@@ -3,6 +3,7 @@ import json
 import random
 import time
 import string
+import os
 
 from flask import Flask, request, send_file, redirect, url_for
 from firebase_admin import credentials, initialize_app, storage
@@ -19,11 +20,11 @@ db = firestore.client()
 prints_ref = db.collection('prints')
 @app.route('/')
 def index():
-    file = open("values.json")
+    file = open((f"{os.getcwd()}\\ref\\values.json"))
     jsonValues = json.load(file)
     file.close()
 
-    file = open("config.json")
+    file =open((f"{os.getcwd()}\\ref\\config.json"))
     config = json.load(file)
     file.close()
     body = "<html><body style = background-color:black>"
@@ -50,7 +51,12 @@ def index():
     for printer in liminal.printers:
         if printer.printer != None and printer.code not in jsonValues["printersDown"]:
             body += f'<h1 style="color:coral;">{printer.nickname}</h1>'
-            body += f'<form action = "{url_for("functions")} method = post>  <input type = "submit" value = "Preheat" /> </form>"'
+            body += f'''
+            <form action = "{url_for("functions")}" method = post>
+            <input type="hidden" name="printer" value="{printer.nickname}">
+            <input type = "submit" value = "Preheat"> 
+            </form>
+            '''
             if config[printer.nickname]["camActive"]:
                 body += f'<img src="{config[printer.nickname]["webcamURL"]}" alt="Video Stream">'
             if printer.fetchNozzleTemp() != None:
@@ -60,6 +66,10 @@ def index():
             if "printing" in printer.state.lower():
                 body += f'<h3 style="color:white;">Currently in use | {int(printer.fetchTimeRemaining()/60)} Minutes left</h3>'
                 #Implement time remaining methods :)
+
+            #
+            #IMPLEMENT PREHEAT BUTTON HERE!
+            #
             else:
                 #Submission requrements:
                 # printer : Printer Name ex. Left Printer
@@ -103,13 +113,16 @@ def functions():
         return "You aren't supposed to be here you silly goose"
     else:
         #Implement API Key validation to ensure legitimate requests
-        if request.form.get("preheat") == "all":
+        if request.form.get("printer") == "all":
             for printer in liminal.printers:
                 printer.preheat()
+            return redirect(url_for("index"))
         else:
+            print(request.form.get(""))
             for printer in liminal.printers:
-                if request.form.get("preheat") == printer.nickname:
+                if request.form.get("printer") == printer.nickname:
                     printer.preheat()
+            return redirect(url_for("index"))
 @app.route('/print', methods = ["GET", "POST"])
 #Form components nessesary:
 #printer : Printer Name ex. Left Printer
@@ -122,7 +135,7 @@ def uploadPrintURL():
     if request.method == "GET":
         return redirect(url_for("index"))
     else:
-        if request.form.get("approval").lower() == liminal.approvalCode and (datetime.datetime.now() - liminal.lastGenerated).minute <= 5:
+        if request.form.get("2FA").lower() == liminal.approvalCode.lower() and (datetime.datetime.now() - liminal.lastGenerated).total_seconds()/60 <= 5:
             for printer in liminal.printers:
                 if request.form.get("printer") == printer.nickname:
                     # Indivdual Print requirements: file (URL String), creator, material, printerCode, nickname
@@ -250,7 +263,7 @@ def emergencyStopWeb():
     liminal.estop()
     return "Printers Stopping"
 @app.route('/2FA')
-def TwoFA(printer):
+def TwoFA():
     liminal.genNewApprovalCode()
     expTime = (liminal.lastGenerated + datetime.timedelta(minutes = 5))
     for printer in liminal.printers:

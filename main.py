@@ -7,7 +7,7 @@ from firebase_admin import credentials
 import netifaces as ni
 
 
-cred = credentials.Certificate(r"C:\Users\LOKrollJ51\Downloads\liminal-302-firebase-adminsdk-u4wul-dca5458090.json")
+cred = credentials.Certificate(f"{os.getcwd()}\\ref\\liminal-302-749fb908ba9b.json")
 firebase_admin.initialize_app(cred,{'storageBucket': 'liminal-302.appspot.com'})
 db = firestore.client()
 prints_ref = db.collection('prints')
@@ -124,7 +124,9 @@ class SinglePrinter():
         """
         Allows you to display text onto the printer
         """
-        self.printer.gcode(f"M117 {message}")
+        if self.printer != None:
+            self.printer.gcode(f"M117 {message}")
+
         
     def upload(self, print : IndividualPrint):
         """
@@ -204,7 +206,7 @@ class SinglePrinter():
 class Liminal():
 
     def __init__(self):
-        self.config = json.load(open("config.json"))
+        self.config = json.load(open(f"{os.getcwd()}\\ref\\config.json"))
         self.printers = []
         self.accounts = list(self.config["students"].keys())
         for item in self.config:
@@ -225,17 +227,16 @@ class Liminal():
         #Error: The printers detected an issue, no connection or other
         #Stop: All printers have been immediately e-stopped
         #self.officeHours = [(datetime.hour(hour=18), datetime.time(hour=21))]
-    async def genNewApprovalCode(self):
-        while True:
-            uuid = ""
-            letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-                           'w', 'x', 'y', 'z']
-            for i in range(4):
-                uuid += random.choice(letters).upper()
-            self.approvalCode = uuid
-            self.lastGenerated = datetime.now()
-            print(uuid)
-            await asyncio.sleep(10)
+    def genNewApprovalCode(self):
+
+        uuid = ""
+        letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v','w', 'x', 'y', 'z']
+        for i in range(4):
+            uuid += random.choice(letters).upper()
+        self.approvalCode = uuid
+        self.lastGenerated = datetime.now()
+        print(uuid)
+
     def estop(self):
         for printer in self.printers:
             printer.abort()
