@@ -4,6 +4,7 @@ from octorest import OctoRest
 from firebase_admin import credentials, initialize_app, storage, firestore
 import firebase_admin
 from firebase_admin import credentials
+import netifaces as ni
 
 
 cred = credentials.Certificate(r"C:\Users\LOKrollJ51\Downloads\liminal-302-firebase-adminsdk-u4wul-dca5458090.json")
@@ -70,8 +71,8 @@ class SinglePrinter():
         try:
             self.printer = make_client(url = url, apikey= key)
             self.printer.connect()
-            ipAddr = socket.gethostbyname(socket.gethostname())
-            self.printer.gcode(f"M117 {ipAddr}")
+            #ipAddr = socket.gethostbyname(socket.gethostname())
+            #self.printer.gcode(f"M117 {ipAddr}")
         except Exception:
             self.printer = None
         #self.printer.home()
@@ -213,6 +214,9 @@ class Liminal():
         self.estimatedBufferTime = 10
         self.approvalCode = "null"
         self.lastGenerated = None
+        self.ipAddress = ni.ifaddresses('eth0')[ni.AF_INET][0]['addr']
+        for printer in self.printers:
+            printer.displayMSG(f"LMNL: {self.ipAddress}")
 
 
         #State Map
