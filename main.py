@@ -55,6 +55,63 @@ class IndividualPrint():
                 print(query_ref.count)
 
         self.uuid = uuid
+
+
+class Mk4Printer():
+    def __init__(self, nickname, ipAddress, apiKey, prefix):
+        self.nozzleTemp = None
+        self.bedTemp = None
+        self.state = None
+        self.currentPrintID = None
+        self.progress = None
+        self.ip = ipAddress
+        self.key = apiKey
+        self.prefix = prefix
+
+    def refreshData(self):
+        headers = {"X-API-KEY": self.key}
+        response = requests.get(f"http://{self.ip}/api/v1/status", headers=headers)
+        data = response.json()
+        self.nozzleTemp = data["printer"]["temp_nozzle"]
+        self.bedtemp = data["printer"]["temp_bed"]
+        self.state = data["printer"]["state"]
+        if "job" in data:
+            self.currentPrintID = data["job"]["id"]
+            self.progress = data["job"]["progress"]
+        else:
+            self.currentPrintID = None
+            self.progress = None
+        print(response.json())
+
+    def upload(self):
+        storage = "usb"
+        path = "name.gcode"
+        uploadFile = open(r"C:\Users\Jack.Kroll\Downloads\DemoPrint.gcode", "r")
+        fileTxt = uploadFile.read()
+        uploadFile.close()
+        uploadLength = len(fileTxt)
+        # ?0 = False, ?1 = True
+        headers = {"X-API-KEY": self.key, "Content-Length": str(uploadLength), "Print-After-Upload": "?0",
+                   "Overwrite": "?0", "Accept-Language": "en-US", "Accept": "application/json"}
+        response = requests.put(f"http://{self.ip}/api/v1/files/{storage}/{path}", headers=headers, data=fileTxt)
+        print(response.text)
+
+    def abort(self):
+        self.refreshData()
+        headers = {"X-API-KEY": self.key}
+        response = requests.delete(f"http://{self.ip}/api/v1/job/{self.currentPrintID}", headers=headers)
+
+    def pause(self):
+        self.refreshData()
+        headers = {"X-API-KEY": self.key}
+        response = requests.put(f"http://{self.ip}/api/v1/job/{self.currentPrintID}/pause", headers=headers)
+
+    def resume(self):
+        self.refreshData()
+        headers = {"X-API-KEY": self.key}
+        response = requests.put(f"http://{self.ip}/api/v1/job/{self.currentPrintID}/resume", headers=headers)
+
+
 class SinglePrinter():
     """"
     This creates a basic printer class with additional information
@@ -207,10 +264,15 @@ class Liminal():
     def __init__(self):
         self.config = json.load(open(f"{os.getcwd()}\\ref\\config.json"))
         self.printers = []
+        self.MK4Printers = []
         self.accounts = list(self.config["students"].keys())
         for item in self.config:
             if "ipAddress" in self.config[item]:
                 self.printers.append(SinglePrinter(item, self.config[item]["ipAddress"], self.config[item]["apiKey"], self.config[item]["prefix"]))
+        for item in self.config:
+            if "Mk4IPAddress" in self.config[item]:
+                #nickname, ipAddress, apiKey, prefix
+                self.MK4Printers.append(Mk4Printer(item, self.config[item]["Mk4IPAddress"], self.config[item]["apiKey"], self.config[item]["prefix"]))
         self.state = "idle"
         self.estimatedBufferTime = 10
         self.approvalCode = "null"
@@ -235,6 +297,8 @@ class Liminal():
 
     def estop(self):
         for printer in self.printers:
+            printer.abort()
+        for printer in self.MK4Printers:
             printer.abort()
         #Implement methods for display & mobile notifications to dispatch
 
