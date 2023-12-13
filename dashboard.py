@@ -101,7 +101,33 @@ def index():
                 </form>
                 """
 
-
+    #Mk4 Printers
+    for printers in liminal.MK4Printers:
+        if printer.prefix not in jsonValues["printersDown"]:
+            body += f'<h1 style="color:coral;">{printer.nickname}</h1>'
+            body += f'<h3 style="color:white;">Nozzle: {printer.fetchNozzleTemp()}</h3>'
+            body += f'<h3 style="color:white;">Bed: {printer.fetchBedTemp()}</h3>'
+            body += f"""
+                <form style="color:white" action="{url_for('uploadPrintURL')}" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="printer" value="{printer.nickname}">
+                <input type="hidden" name="printercode" value="{printer.prefix}">
+                <label for="creator">Uploader</label>
+                <select name="creator" id="creator">
+                """
+            for account in liminal.accounts:
+                body += f'<option value="{account}">{account}</option>'
+            body += f"""
+                            </select>
+                            <input type="hidden" name="material" placeholder="notSet">
+                            <label for="url">GCODE File:</label>
+                            <input type="file" id="url" name="gcode" accept=".gcode">
+                            <label for="nickname">Print Name:</label>
+                            <input type="text" id="nickname" name="nickname" placeholder="nickname">
+                            <label for="approval">Approval Code:</label>
+                            <input type="text" id="approval" name="2FA" placeholder="2FA">
+                            <button type="submit">Upload</button>
+                            </form>
+                            """
     body += "</body></html>"
 
     return body
@@ -136,7 +162,7 @@ def uploadPrintURL():
         return redirect(url_for("index"))
     else:
         if request.form.get("2FA").lower() == liminal.approvalCode.lower() and (datetime.datetime.now() - liminal.lastGenerated).total_seconds()/60 <= 5:
-            for printer in liminal.printers:
+            for printer in liminal.printers or printer in liminal.MK4Printers:
                 if request.form.get("printer") == printer.nickname:
                     # Indivdual Print requirements: file (URL String), creator, material, printerCode, nickname
                     gcodeUpload = request.form.get("gcode")
@@ -153,8 +179,11 @@ def uploadPrintURL():
 
                     if nickname == "":
                         nickname = "Untitled"
-                    printer.printer.upload(file=(nickname + ".gcode", file_contents), location="local", print=True)
-                    printer.printer.select(location=nickname + ".gcode", print=True)
+                    if printer in liminal.printers:
+                        printer.printer.upload(file=(nickname + ".gcode", file_contents), location="local", print=True)
+                        printer.printer.select(location=nickname + ".gcode", print=True)
+                    if printer in liminal.MK4Printers:
+                        printer.upload(file_contents, nickname)
                     #Ensures a .00000000000000000000010661449% change of a UUID collision
                     chars = list(string.ascii_lowercase + string.ascii_uppercase + string.digits)
                     blobName = ""

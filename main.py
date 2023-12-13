@@ -83,18 +83,22 @@ class Mk4Printer():
             self.progress = None
         print(response.json())
 
-    def upload(self):
+    def fetchNozzleTemp(self):
+        self.refreshData()
+        return self.nozzleTemp
+    def fetchBedTemp(self):
+        self.refreshData()
+        return self.bedTemp
+    def upload(self, fileTxt, nickname):
         storage = "usb"
-        path = "name.gcode"
-        uploadFile = open(r"C:\Users\Jack.Kroll\Downloads\DemoPrint.gcode", "r")
-        fileTxt = uploadFile.read()
-        uploadFile.close()
+        path = f"{nickname}.gcode"
         uploadLength = len(fileTxt)
         # ?0 = False, ?1 = True
-        headers = {"X-API-KEY": self.key, "Content-Length": str(uploadLength), "Print-After-Upload": "?0",
+        headers = {"X-API-KEY": self.key, "Content-Length": str(uploadLength), "Print-After-Upload": "?1",
                    "Overwrite": "?0", "Accept-Language": "en-US", "Accept": "application/json"}
         response = requests.put(f"http://{self.ip}/api/v1/files/{storage}/{path}", headers=headers, data=fileTxt)
-        print(response.text)
+        #print(response.text)
+        return True
 
     def abort(self):
         self.refreshData()
