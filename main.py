@@ -7,7 +7,7 @@ from firebase_admin import credentials
 import netifaces as ni
 
 
-cred = credentials.Certificate(f"{os.getcwd()}\\ref\\liminal-302-749fb908ba9b.json")
+cred = credentials.Certificate(f"/ref/liminal-302-749fb908ba9b.json")
 firebase_admin.initialize_app(cred,{'storageBucket': 'liminal-302.appspot.com'})
 db = firestore.client()
 prints_ref = db.collection('prints')
@@ -30,7 +30,7 @@ class IndividualPrint():
         self.file = file
         self.creator = creator
         self.material = material
-        gcodeData = parseGCODE(file)[1]
+        #gcodeData = parseGCODE(file)[1]
         #TIME TO PRINT IS IN
         #self.timeToPrint = gcodeData[1]
         #self.nozzle = gcodeData[0]
@@ -74,7 +74,7 @@ class Mk4Printer():
         response = requests.get(f"http://{self.ip}/api/v1/status", headers=headers)
         data = response.json()
         self.nozzleTemp = data["printer"]["temp_nozzle"]
-        self.bedtemp = data["printer"]["temp_bed"]
+        self.bedTemp = data["printer"]["temp_bed"]
         self.state = data["printer"]["state"]
         if "job" in data:
             self.currentPrintID = data["job"]["id"]
@@ -267,7 +267,7 @@ class SinglePrinter():
 class Liminal():
 
     def __init__(self):
-        self.config = json.load(open(f"{os.getcwd()}\\ref\\config.json"))
+        self.config = json.load(open(f"ref/config.json"))
         self.printers = []
         self.MK4Printers = []
         self.accounts = list(self.config["students"].keys())
@@ -331,21 +331,24 @@ def parseGCODELocal(filepath):
 
     return [nozzleDiameter, timedelta.seconds]
 def parseGCODE(link):
-    file = requests.get(link).text
-    file_contents = file
-    file_contents = file_contents.split(";")
-    printTime = [item for item in file_contents if item.startswith(" estimated printing time (normal mode)")][0]
-    #Above, getting the print time from the GCODE. Below, parsing the string to extract the timing
-    printTime = printTime.strip(" estimated printing time (normal mode) = ")
-    printTime = printTime.strip("\n")
-    timeInSec = pytimeparse.parse(printTime)
-    timeDelta = timedelta(seconds= timeInSec)
-    #Below, getting nozzle diameter for print
-    nozzleDiameter = [item for item in file_contents if item.startswith(" nozzle_diameter = ")][0]
-    nozzleDiameter = nozzleDiameter.strip(" nozzle_diameter = ")
-    nozzleDiameter = nozzleDiameter.strip("\n")
+    try:
+        file = requests.get(link).text
+        file_contents = file
+        file_contents = file_contents.split(";")
+        printTime = [item for item in file_contents if item.startswith(" estimated printing time (normal mode)")][0]
+        #Above, getting the print time from the GCODE. Below, parsing the string to extract the timing
+        printTime = printTime.strip(" estimated printing time (normal mode) = ")
+        printTime = printTime.strip("\n")
+        timeInSec = pytimeparse.parse(printTime)
+        timeDelta = timedelta(seconds= timeInSec)
+        #Below, getting nozzle diameter for print
+        nozzleDiameter = [item for item in file_contents if item.startswith(" nozzle_diameter = ")][0]
+        nozzleDiameter = nozzleDiameter.strip(" nozzle_diameter = ")
+        nozzleDiameter = nozzleDiameter.strip("\n")
 
-    return [nozzleDiameter, timedelta.seconds]
+        return [nozzleDiameter, timedelta.seconds]
+    except:
+        return None
 #Left Printer,http://10.110.8.77 ,FCDAE0344C424542B80117AF896B62F6
 #Middle Printer, http://10.110.8.110, 6273C0628B8B47E397CA4554C94F6CD5
 #Right Printer,http://10.110.8.100 ,33A782146A5A48A7B3B9873217BD19AC
