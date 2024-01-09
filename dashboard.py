@@ -18,13 +18,15 @@ liminal = Liminal()
 bucket = storage.bucket()
 db = firestore.client()
 prints_ref = db.collection('prints')
+cwd = ""
+#CWD, current working directory, is the directory that the file is in
 @app.route('/')
 def index():
-    file = open((f"{os.getcwd()}\\ref\\values.json"))
+    file = open((f"{cwd}/ref/values.json"))
     jsonValues = json.load(file)
     file.close()
 
-    file =open((f"{os.getcwd()}\\ref\\config.json"))
+    file =open((f"{cwd}/ref/config.json"))
     config = json.load(file)
     file.close()
     body = "<html><body style = background-color:black>"
@@ -63,13 +65,10 @@ def index():
                 body += f'<h3 style="color:white;">Nozzle: {printer.fetchNozzleTemp()["actual"]}</h3>'
             if printer.fetchBedTemp() != None:
                 body += f'<h3 style="color:white;">Bed: {printer.fetchBedTemp()["actual"]}</h3>'
-            if "printing" in printer.state.lower():
+            if "printing" in printer.state.lower() and printer.fetchBedTemp() >= 100:
                 body += f'<h3 style="color:white;">Currently in use | {int(printer.fetchTimeRemaining()/60)} Minutes left</h3>'
                 #Implement time remaining methods :)
 
-            #
-            #IMPLEMENT PREHEAT BUTTON HERE!
-            #
             else:
                 #Submission requrements:
                 # printer : Printer Name ex. Left Printer
@@ -102,7 +101,7 @@ def index():
                 """
 
     #Mk4 Printers
-    for printers in liminal.MK4Printers:
+    for printer in liminal.MK4Printers:
         if printer.prefix not in jsonValues["printersDown"]:
             body += f'<h1 style="color:coral;">{printer.nickname}</h1>'
             body += f'<h3 style="color:white;">Nozzle: {printer.fetchNozzleTemp()}</h3>'
@@ -162,7 +161,7 @@ def uploadPrintURL():
         return redirect(url_for("index"))
     else:
         if request.form.get("2FA").lower() == liminal.approvalCode.lower() and (datetime.datetime.now() - liminal.lastGenerated).total_seconds()/60 <= 5:
-            for printer in liminal.printers or printer in liminal.MK4Printers:
+            for printer in (liminal.printers + liminal.MK4Printers):
                 if request.form.get("printer") == printer.nickname:
                     # Indivdual Print requirements: file (URL String), creator, material, printerCode, nickname
                     gcodeUpload = request.form.get("gcode")
@@ -182,8 +181,11 @@ def uploadPrintURL():
                     if printer in liminal.printers:
                         printer.printer.upload(file=(nickname + ".gcode", file_contents), location="local", print=True)
                         printer.printer.select(location=nickname + ".gcode", print=True)
-                    if printer in liminal.MK4Printers:
-                        printer.upload(file_contents, nickname)
+                    else:
+                        if printer in liminal.MK4Printers:
+                            printer.upload(file_contents, nickname)
+                        else:
+                            return "Printer"
                     #Ensures a .00000000000000000000010661449% change of a UUID collision
                     chars = list(string.ascii_lowercase + string.ascii_uppercase + string.digits)
                     blobName = ""
@@ -266,11 +268,11 @@ def setPrinterOnline():
     if request.method == "GET":
         return redirect(url_for("setPrinterStatus"))
     else:
-        with open("values.json", "r") as f:
+        with open(f"{cwd}/ref/values.json", "r") as f:
             setOnline = request.form.get("printer")
             jsonValues = json.load(f)
             jsonValues["printersDown"].remove(setOnline)
-        with open("values.json", "w") as f:
+        with open(f"{cwd}/ref/values.json", "w") as f:
             json.dump(jsonValues,f,indent=4)
         return redirect(url_for("setPrinterStatus"))
 
@@ -279,11 +281,11 @@ def setPrinterOffline():
     if request.method == "GET":
         return redirect(url_for("setPrinterStatus"))
     else:
-        with open("values.json", "r") as f:
+        with open(f"{cwd}/ref/values.json", "r") as f:
             setOnline = request.form.get("printer")
             jsonValues = json.load(f)
             jsonValues["printersDown"].append(setOnline)
-        with open("values.json", "w") as f:
+        with open(f"{cwd}/ref/values.json", "w") as f:
             json.dump(jsonValues, f, indent=4)
         return redirect(url_for("setPrinterStatus"))
 
@@ -306,7 +308,7 @@ def clean():
     return redirect(url_for("index"))
 @app.route('/dev',methods = ["GET"])
 def setPrinterStatus():
-    file = open("values.json")
+    file = open(f"{cwd}/ref/values.json")
     jsonValues = json.load(file)
     file.close()
     if request.method == "GET":
@@ -341,7 +343,7 @@ def setPrinterStatus():
                     <button type="submit">Switch Online</button>
                     </form>
                                 """
-        body += f'<a href="{url_for(clean)}">Clear all displays</a>'
+        body += f'<a href="{url_for("clean")}">Clear all displays</a>'
         return body
     
 if __name__ == '__main__':

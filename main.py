@@ -6,8 +6,8 @@ import firebase_admin
 from firebase_admin import credentials
 import netifaces as ni
 
-
-cred = credentials.Certificate(f"/ref/liminal-302-749fb908ba9b.json")
+cwd = ""
+cred = credentials.Certificate(f"{cwd}/ref/liminal-302-749fb908ba9b.json")
 firebase_admin.initialize_app(cred,{'storageBucket': 'liminal-302.appspot.com'})
 db = firestore.client()
 prints_ref = db.collection('prints')
@@ -68,6 +68,7 @@ class Mk4Printer():
         self.ip = ipAddress
         self.key = apiKey
         self.prefix = prefix
+        self.nickname = nickname
 
     def refreshData(self):
         headers = {"X-API-KEY": self.key}
@@ -267,7 +268,7 @@ class SinglePrinter():
 class Liminal():
 
     def __init__(self):
-        self.config = json.load(open(f"ref/config.json"))
+        self.config = json.load(open(f"{cwd}/ref/config.json"))
         self.printers = []
         self.MK4Printers = []
         self.accounts = list(self.config["students"].keys())
