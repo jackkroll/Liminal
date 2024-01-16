@@ -65,7 +65,7 @@ def index():
                 body += f'<h3 style="color:white;">Nozzle: {printer.fetchNozzleTemp()["actual"]}</h3>'
             if printer.fetchBedTemp() != None:
                 body += f'<h3 style="color:white;">Bed: {printer.fetchBedTemp()["actual"]}</h3>'
-            if "printing" in printer.state.lower() and printer.fetchBedTemp() >= 100:
+            if "printing" in printer.state.lower() and printer.fetchBedTemp()[0] >= 100:
                 body += f'<h3 style="color:white;">Currently in use | {int(printer.fetchTimeRemaining()/60)} Minutes left</h3>'
                 #Implement time remaining methods :)
 
@@ -163,12 +163,18 @@ def uploadPrintURL():
         if request.form.get("2FA").lower() == liminal.approvalCode.lower() and (datetime.datetime.now() - liminal.lastGenerated).total_seconds()/60 <= 5:
             for printer in (liminal.printers + liminal.MK4Printers):
                 if request.form.get("printer") == printer.nickname:
+                    print("[OPERATIONAL] Printer selected for printing")
                     # Indivdual Print requirements: file (URL String), creator, material, printerCode, nickname
-                    gcodeUpload = request.form.get("gcode")
-                    user = request.form.get("creator")
-                    material = request.form.get("material")
-                    printerCode = request.form.get("printercode")
-                    nickname = request.form.get("nickname")
+                    try:
+                        gcodeUpload = request.form.get("gcode")
+                        user = request.form.get("creator")
+                        material = request.form.get("material")
+                        printerCode = request.form.get("printercode")
+                        nickname = request.form.get("nickname")
+                        print("[OPERATIONAL] Form data successfully gathered")
+                    except Exception as e:
+                        print("[ERROR] Failed to gather form data")
+                        return "Unable to get HTTP form data"
 
 
                     #printer.upload(individualPrint)
@@ -181,36 +187,43 @@ def uploadPrintURL():
                     if printer in liminal.printers:
                         printer.printer.upload(file=(nickname + ".gcode", file_contents), location="local", print=True)
                         printer.printer.select(location=nickname + ".gcode", print=True)
+                        print("[OPERATIONAL] Successfully printed onto a Mk3 printer")
                     else:
                         if printer in liminal.MK4Printers:
                             printer.upload(file_contents, nickname)
+                            print("[OPERATIONAL] Successfully printed onto a Mk4 printer")
                         else:
-                            return "Printer"
+                            print(f"[ERROR] The printer {request.form.get('printer')} is not registered")
+                            return f"The printer {request.form.get('printer')} is not registered"
                     #Ensures a .00000000000000000000010661449% change of a UUID collision
-                    chars = list(string.ascii_lowercase + string.ascii_uppercase + string.digits)
-                    blobName = ""
-                    for i in range(0,15):
-                        blobName += random.choice(chars)
-                    blob = bucket.blob(blobName)
-                    blob.upload_from_string(file_contents)
-                    blob.make_public()
+                    try:
+                        chars = list(string.ascii_lowercase + string.ascii_uppercase + string.digits)
+                        blobName = ""
+                        for i in range(0,15):
+                            blobName += random.choice(chars)
+                        blob = bucket.blob(blobName)
+                        blob.upload_from_string(file_contents)
+                        blob.make_public()
 
 
-                    fileURL = blob.public_url
-                    individualPrint = IndividualPrint(fileURL, user, material, printerCode, nickname)
+                        fileURL = blob.public_url
+                        individualPrint = IndividualPrint(fileURL, user, material, printerCode, nickname)
 
-                    doc_ref = db.collection('prints').document(individualPrint.uuid)
+                        doc_ref = db.collection('prints').document(individualPrint.uuid)
 
-                    doc_ref.set({
-                        'gcode': individualPrint.file,
-                        'creator': individualPrint.creator,
-                        'material': individualPrint.material,
-                        'printerCode': individualPrint.printerCode,
-                        'nickname': individualPrint.nickname,
-                        'uuid': individualPrint.uuid,
-                        'year': individualPrint.uuid[-2::],
-                        'created': firestore.SERVER_TIMESTAMP
-                    })
+                        doc_ref.set({
+                            'gcode': individualPrint.file,
+                            'creator': individualPrint.creator,
+                            'material': individualPrint.material,
+                            'printerCode': individualPrint.printerCode,
+                            'nickname': individualPrint.nickname,
+                            'uuid': individualPrint.uuid,
+                            'year': individualPrint.uuid[-2::],
+                            'created': firestore.SERVER_TIMESTAMP
+                        })
+                    except Exception:
+                        print("[WARNING] The print was not logged successfully to Firebase, but was uploaded to the printers")
+                        return "Your print was successfully uploaded to the printer but was not saved to the cloud."
 
                     return f"Your print was successfully uploaded and documented. The unique code for your print is: {individualPrint.uuid}"
         else:

@@ -274,16 +274,23 @@ class Liminal():
         self.accounts = list(self.config["students"].keys())
         for item in self.config:
             if "ipAddress" in self.config[item]:
-                self.printers.append(SinglePrinter(item, self.config[item]["ipAddress"], self.config[item]["apiKey"], self.config[item]["prefix"]))
+                tempPrinter = SinglePrinter(item, self.config[item]["ipAddress"], self.config[item]["apiKey"], self.config[item]["prefix"])
+                if tempPrinter.state == "offline" or tempPrinter.state == "closedOrError":
+                    print("[ERROR] Printer is offline and cannot be added to LMNL")
+                else:
+                    print("[OPERATIONAL] Mk3 Printer has been successfully added")
+                    self.printers.append(tempPrinter)
         for item in self.config:
             if "Mk4IPAddress" in self.config[item]:
                 #nickname, ipAddress, apiKey, prefix
+                print("[OPERATIONAL] Mk4 Printer has been successfully added")
                 self.MK4Printers.append(Mk4Printer(item, self.config[item]["Mk4IPAddress"], self.config[item]["apiKey"], self.config[item]["prefix"]))
         self.state = "idle"
         self.estimatedBufferTime = 10
         self.approvalCode = "null"
         self.lastGenerated = None
         self.ipAddress = ni.ifaddresses('eth0')[ni.AF_INET][0]['addr']
+        print(f"[INFO] The system IP address is: {self.ipAddress}")
         for printer in self.printers:
             printer.displayMSG(f"LMNL: {self.ipAddress}")
 
