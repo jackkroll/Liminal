@@ -103,30 +103,36 @@ def index():
     #Mk4 Printers
     for printer in liminal.MK4Printers:
         if printer.prefix not in jsonValues["printersDown"]:
-            body += f'<h1 style="color:coral;">{printer.nickname}</h1>'
-            body += f'<h3 style="color:white;">Nozzle: {printer.fetchNozzleTemp()}</h3>'
-            body += f'<h3 style="color:white;">Bed: {printer.fetchBedTemp()}</h3>'
-            body += f"""
-                <form style="color:white" action="{url_for('uploadPrintURL')}" method="post" enctype="multipart/form-data">
-                <input type="hidden" name="printer" value="{printer.nickname}">
-                <input type="hidden" name="printercode" value="{printer.prefix}">
-                <label for="creator">Uploader</label>
-                <select name="creator" id="creator">
-                """
-            for account in liminal.accounts:
-                body += f'<option value="{account}">{account}</option>'
-            body += f"""
-                            </select>
-                            <input type="hidden" name="material" placeholder="notSet">
-                            <label for="url">GCODE File:</label>
-                            <input type="file" id="url" name="gcode" accept=".gcode">
-                            <label for="nickname">Print Name:</label>
-                            <input type="text" id="nickname" name="nickname" placeholder="nickname">
-                            <label for="approval">Approval Code:</label>
-                            <input type="text" id="approval" name="2FA" placeholder="2FA">
-                            <button type="submit">Upload</button>
-                            </form>
-                            """
+            try:
+                printer.refreshData()
+            except Exception:
+                liminal.printers.remove(printer)
+                print("[ERROR] Error refreshing data when displaying dashboard")
+            else:
+                body += f'<h1 style="color:coral;">{printer.nickname}</h1>'
+                body += f'<h3 style="color:white;">Nozzle: {printer.fetchNozzleTemp()}</h3>'
+                body += f'<h3 style="color:white;">Bed: {printer.fetchBedTemp()}</h3>'
+                body += f"""
+                    <form style="color:white" action="{url_for('uploadPrintURL')}" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="printer" value="{printer.nickname}">
+                    <input type="hidden" name="printercode" value="{printer.prefix}">
+                    <label for="creator">Uploader</label>
+                    <select name="creator" id="creator">
+                    """
+                for account in liminal.accounts:
+                    body += f'<option value="{account}">{account}</option>'
+                body += f"""
+                                </select>
+                                <input type="hidden" name="material" placeholder="notSet">
+                                <label for="url">GCODE File:</label>
+                                <input type="file" id="url" name="gcode" accept=".gcode">
+                                <label for="nickname">Print Name:</label>
+                                <input type="text" id="nickname" name="nickname" placeholder="nickname">
+                                <label for="approval">Approval Code:</label>
+                                <input type="text" id="approval" name="2FA" placeholder="2FA">
+                                <button type="submit">Upload</button>
+                                </form>
+                                """
     body += "</body></html>"
 
     return body
@@ -289,6 +295,20 @@ def setPrinterOnline():
             json.dump(jsonValues,f,indent=4)
         return redirect(url_for("setPrinterStatus"))
 
+@app.route('/dev/ip',methods = ["GET", "POST"])
+def changeIPAddr():
+    if request.method == "GET":
+        return redirect(url_for("setPrinterStatus"))
+    else:
+        with open(f"{cwd}/ref/config.json", "r") as f:
+            changedIP = request.form.get("printer")
+            newAddress = request.form.get("addr")
+            jsonValues = json.load(f)
+            jsonValues[changedIP]["ipAddress"] = newAddress
+        with open(f"{cwd}/ref/config.json", "w") as f:
+            json.dump(jsonValues,f,indent=4)
+        return redirect(url_for("setPrinterStatus"))
+
 @app.route('/dev/offline',methods = ["GET", "POST"])
 def setPrinterOffline():
     if request.method == "GET":
@@ -319,6 +339,36 @@ def clean():
     for printer in liminal.printers:
         printer.displayMSG(f"")
     return redirect(url_for("index"))
+@app.route('/ip',methods = ["GET"])
+def ipManagement():
+    file = open(f"{cwd}/ref/config.json")
+    jsonValues = json.load(file)
+    file.close()
+    body = "<html><body style = background-color:black>"
+    body += """
+    <head>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter">
+    </head>
+    <style>
+    body {
+        font-family: "Inter", sans-serif;
+    }
+    </style>
+    """
+    for item in jsonValues:
+        if "ipAddress" in item:
+            body += f'<h1 style="color:coral"> {item} </h1>'
+            body += f"""
+            <form style="color:white" action="{url_for('changeIPAddr')}" method="post", enctype="multipart/form-data">
+            <input type="hidden" name="printer" value="{item}">
+            <input type="text" name="printer" value="{jsonValues[item]["ipAddress"]}">
+            <button type="submit">Update IP Address</button>
+            </form>
+            """
+    body += """
+    '<h1 style="color:red"> WARNING: Changing these values may result in this software not recognizing printers, only do this if you know what you're doing </h1>'
+    """
+
 @app.route('/dev',methods = ["GET"])
 def setPrinterStatus():
     file = open(f"{cwd}/ref/values.json")
