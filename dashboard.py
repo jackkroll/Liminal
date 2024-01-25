@@ -56,7 +56,11 @@ def index():
     
     """
     for printer in liminal.printers:
+        if printer.state == "offline" or printer.state == "closedOrError":
+            liminal.printers.remove(printer)
+            continue
         if printer.printer != None and printer.code not in jsonValues["printersDown"]:
+
             body += f'<h1 style="color:coral;">{printer.nickname}</h1>'
             body += f'''
             <form action = "{url_for("functions")}" method = post>
