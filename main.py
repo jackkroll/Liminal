@@ -1,4 +1,4 @@
-import time, asyncio, os, pytimeparse, datetime, requests, random, math,json, socket
+import time, asyncio, os, pytimeparse, datetime, requests, random, math,json, socket, sys
 from datetime import datetime, timedelta
 from octorest import OctoRest
 from firebase_admin import credentials, initialize_app, storage, firestore
@@ -6,7 +6,11 @@ import firebase_admin
 from firebase_admin import credentials
 import netifaces as ni
 
-cwd = ""
+if sys.platform == "win32":
+    cwd = "C:/Users/jackk/Desktop/Liminal"
+else:
+    cwd = ""
+
 cred = credentials.Certificate(f"{cwd}/ref/liminal-302-749fb908ba9b.json")
 firebase_admin.initialize_app(cred,{'storageBucket': 'liminal-302.appspot.com'})
 db = firestore.client()
@@ -289,7 +293,13 @@ class Liminal():
         self.estimatedBufferTime = 10
         self.approvalCode = "null"
         self.lastGenerated = None
-        self.ipAddress = ni.ifaddresses('eth0')[ni.AF_INET][0]['addr']
+        try:
+            self.ipAddress = ni.ifaddresses('eth0')[ni.AF_INET][0]['addr']
+        except ValueError:
+            self.ipAddress = socket.gethostbyname(socket.gethostname())
+        except Exception:
+            self.ipAddress = None
+            print("[ERROR] IP Address unreachable")
         print(f"[INFO] The system IP address is: {self.ipAddress}")
         for printer in self.printers:
             printer.displayMSG(f"LMNL: {self.ipAddress}")
@@ -357,17 +367,5 @@ def parseGCODE(link):
         return [nozzleDiameter, timedelta.seconds]
     except:
         return None
-#Left Printer,http://10.110.8.77 ,FCDAE0344C424542B80117AF896B62F6
-#Middle Printer, http://10.110.8.110, 6273C0628B8B47E397CA4554C94F6CD5
-#Right Printer,http://10.110.8.100 ,33A782146A5A48A7B3B9873217BD19AC
-
-#spencer = SinglePrinter("Middle", "http://10.110.8.110","6273C0628B8B47E397CA4554C94F6CD5")
-#spencer.printer.jog(x=5)
-
-#myPrinter.printer.disconnect()
-
-#Sort by queued prints and if time is now or past and state is unchanged, queue to print on printer
-liminal = Liminal()
-print(liminal.printers)
 
 

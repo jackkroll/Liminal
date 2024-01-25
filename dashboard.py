@@ -4,6 +4,7 @@ import random
 import time
 import string
 import os
+import sys
 
 from flask import Flask, request, send_file, redirect, url_for
 from firebase_admin import credentials, initialize_app, storage
@@ -18,7 +19,11 @@ liminal = Liminal()
 bucket = storage.bucket()
 db = firestore.client()
 prints_ref = db.collection('prints')
-cwd = ""
+
+if sys.platform == "win32":
+    cwd = "C:/Users/jackk/Desktop/Liminal"
+else:
+    cwd = ""
 #CWD, current working directory, is the directory that the file is in
 @app.route('/')
 def index():
