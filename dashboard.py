@@ -106,7 +106,8 @@ def index():
             try:
                 printer.refreshData()
             except Exception:
-                liminal.printers.remove(printer)
+                if printer in liminal.printers:
+                    liminal.printers.remove(printer)
                 print("[ERROR] Error refreshing data when displaying dashboard")
             else:
                 body += f'<h1 style="color:coral;">{printer.nickname}</h1>'
