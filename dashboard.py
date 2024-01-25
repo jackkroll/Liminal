@@ -369,6 +369,7 @@ def ipManagement():
     body += """
     '<h1 style="color:red"> WARNING: Changing these values may result in this software not recognizing printers, only do this if you know what you're doing </h1>'
     """
+    return body
 
 @app.route('/dev',methods = ["GET"])
 def setPrinterStatus():
