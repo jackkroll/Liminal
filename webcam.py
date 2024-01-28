@@ -1,9 +1,23 @@
 from flask import Flask, render_template, Response
+from PIL import ImageDraw
+
+
+from datasets import load_dataset
+from huggingface_hub import hf_hub_download
+import torch
 import cv2
 
 app = Flask(__name__)
 
 camera = cv2.VideoCapture(0)
+
+
+repo_id = "Javiai/3dprintfails-yolo5vs"
+filename= "model_torch.pt"
+#https://huggingface.co/Javiai/3dprintfails-yolo5vs
+model_path = hf_hub_download(repo_id=repo_id, filename=filename)
+dataset = load_dataset('Javiai/failures-3D-print')
+model = torch.hub.load('Ultralytics/yolov5', 'custom', model_path, verbose = False)
 
 def gen_frames():
     while True:
@@ -11,6 +25,26 @@ def gen_frames():
         if not success:
             break
         else:
+            draw = ImageDraw.Draw(frame)
+
+            detections = model(frame)
+
+            categories = [
+                {'name': 'error', 'color': (0, 0, 255)},
+                {'name': 'extrusor', 'color': (0, 255, 0)},
+                {'name': 'part', 'color': (255, 0, 0)},
+                {'name': 'spaghetti', 'color': (0, 0, 255)}
+            ]
+
+            for detection in detections.xyxy[0]:
+                x1, y1, x2, y2, p, category_id = detection
+                x1, y1, x2, y2, category_id = int(x1), int(y1), int(x2), int(y2), int(category_id)
+                draw.rectangle((x1, y1, x2, y2),
+                               outline=categories[category_id]['color'],
+                               width=1)
+                draw.text((x1, y1), categories[category_id]['name'],
+                          categories[category_id]['color'])
+
             ret, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
             yield (b'--frame\r\n'
