@@ -1,6 +1,8 @@
-from flask import Flask, render_template, Response
-from PIL import ImageDraw
+import time
 
+from flask import Flask, render_template, Response
+from PIL import ImageDraw, Image
+import numpy as np
 
 from datasets import load_dataset
 from huggingface_hub import hf_hub_download
@@ -25,13 +27,14 @@ def gen_frames():
         if not success:
             break
         else:
-            draw = ImageDraw.Draw(frame)
+            img = Image.fromarray(np.uint8(frame)).convert('RGB')
+            draw = ImageDraw.Draw(img)
 
             detections = model(frame)
 
             categories = [
                 {'name': 'error', 'color': (0, 0, 255)},
-                {'name': 'extrusor', 'color': (0, 255, 0)},
+                {'name': 'extruder', 'color': (0, 255, 0)},
                 {'name': 'part', 'color': (255, 0, 0)},
                 {'name': 'spaghetti', 'color': (0, 0, 255)}
             ]
@@ -45,13 +48,15 @@ def gen_frames():
                 draw.text((x1, y1), categories[category_id]['name'],
                           categories[category_id]['color'])
 
-            ret, buffer = cv2.imencode('.jpg', frame)
+
+            ret, buffer = cv2.imencode('.jpg', np.array(img))
             frame = buffer.tobytes()
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 
-@app.route('/webcam/0')
+
+@app.route('/')
 def video_feed():
     #Video streaming route. Put this in the src attribute of an img tag
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
@@ -59,4 +64,4 @@ def video_feed():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host= "0.0.0.0", port= 8001)
+    app.run(debug=True, host= "0.0.0.0", port= 8000)
