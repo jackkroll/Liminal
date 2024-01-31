@@ -1,6 +1,7 @@
+import os
 import time
 
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, url_for, send_file
 from PIL import ImageDraw, Image
 import numpy as np
 
@@ -12,14 +13,9 @@ import cv2
 app = Flask(__name__)
 
 camera = cv2.VideoCapture(0)
-
-
-repo_id = "Javiai/3dprintfails-yolo5vs"
-filename= "model_torch.pt"
-#https://huggingface.co/Javiai/3dprintfails-yolo5vs
-model_path = hf_hub_download(repo_id=repo_id, filename=filename)
-dataset = load_dataset('Javiai/failures-3D-print')
-model = torch.hub.load('Ultralytics/yolov5', 'custom', model_path, verbose = False)
+bufferVid = []
+frameRate = 24
+rollingTime = 30
 
 def gen_frames():
     while True:
@@ -27,40 +23,36 @@ def gen_frames():
         if not success:
             break
         else:
-            img = Image.fromarray(np.uint8(frame)).convert('RGB')
-            draw = ImageDraw.Draw(img)
-
-            detections = model(frame)
-
-            categories = [
-                {'name': 'error', 'color': (0, 0, 255)},
-                {'name': 'extruder', 'color': (0, 255, 0)},
-                {'name': 'part', 'color': (255, 0, 0)},
-                {'name': 'spaghetti', 'color': (0, 0, 255)}
-            ]
-
-            for detection in detections.xyxy[0]:
-                x1, y1, x2, y2, p, category_id = detection
-                x1, y1, x2, y2, category_id = int(x1), int(y1), int(x2), int(y2), int(category_id)
-                draw.rectangle((x1, y1, x2, y2),
-                               outline=categories[category_id]['color'],
-                               width=1)
-                draw.text((x1, y1), categories[category_id]['name'],
-                          categories[category_id]['color'])
-
-
-            ret, buffer = cv2.imencode('.jpg', np.array(img))
+            bufferVid.append(frame)
+            if len(bufferVid) >= (frameRate * rollingTime):
+                for number in range(0, len(bufferVid) - (frameRate * rollingTime)):
+                    del bufferVid[:number]
+            ret, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 
 
-@app.route('/')
+@app.route('/videoRaw')
 def video_feed():
-    #Video streaming route. Put this in the src attribute of an img tag
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route('/last30Sec')
+def last30Sec():
+    result = cv2.VideoWriter("OutputVideo.mp4", cv2.VideoWriter_fourcc(*'mp4v'), frameRate, (640, 480))
+    for frame in bufferVid:
+        result.write(frame)
+    result.release()
+    return send_file(r"C:\Users\jackk\Desktop\Liminal\OutputVideo.mp4")
+@app.route('/')
+def main():
 
+    return f"""
+     <img src='{url_for("video_feed") }'width="640" height="480">
+     <a href='{url_for("last30Sec")}' download>
+          <h1> Download last 30 Seconds </h1>
+     </a>
+    """
 
 
 if __name__ == '__main__':

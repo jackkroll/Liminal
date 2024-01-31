@@ -419,6 +419,6 @@ def setPrinterStatus():
                                 """
         body += f'<a href="{url_for("clean")}">Clear all displays</a>'
         return body
-    
+
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port= 8000)
