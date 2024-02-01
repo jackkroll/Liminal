@@ -12,32 +12,43 @@ import cv2
 
 app = Flask(__name__)
 
-camera = cv2.VideoCapture(0)
+camera1 = cv2.VideoCapture(0)
+cameras = [camera1]
 bufferVid = []
 frameRate = 24
 rollingTime = 30
 
-def gen_frames():
-    while True:
-        success, frame = camera.read()
-        if not success:
-            break
-        else:
-            bufferVid.append(frame)
-            if len(bufferVid) >= (frameRate * rollingTime):
-                for number in range(0, len(bufferVid) - (frameRate * rollingTime)):
-                    del bufferVid[:number]
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+class Camera():
+    self.printer = None
+    self.buffer = []
+    self.frameRate = 24
+    self.rollingTime = 30
+    self.camera = cv2.VideoCapture(0)
+
+    def gen_frames():
+        while True:
+            success, frame = camera.read()
+            if not success:
+                break
+            else:
+                buffer.append(frame)
+                if len(buffer) >= (frameRate * rollingTime):
+                    for number in range(0, len(buffer) - (frameRate * rollingTime)):
+                        del buffer[:number]
+                ret, buffer = cv2.imencode('.jpg', frame)
+                frame = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+    
 
 
 
-@app.route('/videoRaw')
-def video_feed():
-    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-@app.route('/last30Sec')
+
+
+@app.route('/cameraRaw/<path:cameraNum>')
+def video_feed(cameraNum):
+    return Response(gen_frames(cameraNum), mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route('/last30Sec/')
 def last30Sec():
     result = cv2.VideoWriter("OutputVideo.mp4", cv2.VideoWriter_fourcc(*'mp4v'), frameRate, (640, 480))
     for frame in bufferVid:
