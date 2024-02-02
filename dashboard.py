@@ -23,7 +23,7 @@ prints_ref = db.collection('prints')
 if sys.platform == "win32":
     cwd = "C:/Users/jackk/Desktop/Liminal"
 else:
-    cwd = ""
+    cwd = "/home/jack/Documents/Liminal-master"
 #CWD, current working directory, is the directory that the file is in
 @app.route('/')
 def index():

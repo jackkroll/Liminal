@@ -1,60 +1,55 @@
+import datetime
 import os
 import time
+import sys
 
 from flask import Flask, render_template, Response, url_for, send_file
-from PIL import ImageDraw, Image
-import numpy as np
-
-from datasets import load_dataset
-from huggingface_hub import hf_hub_download
-import torch
 import cv2
 
 app = Flask(__name__)
 
-camera1 = cv2.VideoCapture(0)
-cameras = [camera1]
-bufferVid = []
-frameRate = 24
-rollingTime = 30
-
+if sys.platform == "win32":
+    cwd = "C:/Users/jackk/Desktop/Liminal"
+else:
+    cwd = "/home/jack/Documents/Liminal-master"
 class Camera():
-    self.printer = None
-    self.buffer = []
-    self.frameRate = 24
-    self.rollingTime = 30
-    self.camera = cv2.VideoCapture(0)
+    def __init__(self, cameraNumber):
+        self.printer = None
+        self.buffer = []
+        self.frameRate = 24
+        self.rollingTime = 30
+        self.camera = cv2.VideoCapture(cameraNumber)
 
-    def gen_frames():
+    def gen_frames(self):
         while True:
-            success, frame = camera.read()
+            success, frame = self.camera.read()
             if not success:
                 break
             else:
-                buffer.append(frame)
-                if len(buffer) >= (frameRate * rollingTime):
-                    for number in range(0, len(buffer) - (frameRate * rollingTime)):
-                        del buffer[:number]
+                self.buffer.append(frame)
+                if len(self.buffer) >= (self.frameRate * self.rollingTime):
+                    for number in range(0, len(self.buffer) - (self.frameRate * self.rollingTime)):
+                        del self.buffer[:number]
                 ret, buffer = cv2.imencode('.jpg', frame)
                 frame = buffer.tobytes()
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-    
 
-
-
-
+cameras = [Camera(0)]
 
 @app.route('/cameraRaw/<path:cameraNum>')
 def video_feed(cameraNum):
-    return Response(gen_frames(cameraNum), mimetype='multipart/x-mixed-replace; boundary=frame')
-@app.route('/last30Sec/')
-def last30Sec():
-    result = cv2.VideoWriter("OutputVideo.mp4", cv2.VideoWriter_fourcc(*'mp4v'), frameRate, (640, 480))
-    for frame in bufferVid:
+    selectedCam = cameras[int(cameraNum)]
+    return Response(selectedCam.gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route('/fetchlast30/<path:cameraNum>')
+def last30Sec(cameraNum):
+    selectedCam = cameras[int(cameraNum)]
+    fileName = datetime.datetime.now().strftime("%X%m%d%y")
+    result = cv2.VideoWriter(f"/videos/clips/{fileName}.mp4", cv2.VideoWriter_fourcc(*'mp4v'), selectedCam.frameRate, (640, 480))
+    for frame in selectedCam.buffer:
         result.write(frame)
     result.release()
-    return send_file(r"C:\Users\jackk\Desktop\Liminal\OutputVideo.mp4")
+    return send_file(f"{cwd}/videos/clips/{fileName}.mp4")
 @app.route('/')
 def main():
 

@@ -9,7 +9,7 @@ import netifaces as ni
 if sys.platform == "win32":
     cwd = "C:/Users/jackk/Desktop/Liminal"
 else:
-    cwd = ""
+    cwd = "/home/jack/Documents/Liminal-master"
 
 cred = credentials.Certificate(f"{cwd}/ref/liminal-302-749fb908ba9b.json")
 firebase_admin.initialize_app(cred,{'storageBucket': 'liminal-302.appspot.com'})
