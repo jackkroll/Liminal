@@ -19,6 +19,7 @@ class Camera():
         self.frameRate = 24
         self.rollingTime = 30
         self.camera = cv2.VideoCapture(cameraNumber)
+        self.cameraNumber = cameraNumber
 
     def gen_frames(self):
         while True:
@@ -37,11 +38,11 @@ class Camera():
 
 cameras = [Camera(0)]
 
-@app.route('/cameraRaw/<path:cameraNum>')
+@app.route('/camera/raw/<path:cameraNum>')
 def video_feed(cameraNum):
     selectedCam = cameras[int(cameraNum)]
     return Response(selectedCam.gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-@app.route('/fetchlast30/<path:cameraNum>')
+@app.route('/camera/fetchlast30/<path:cameraNum>')
 def last30Sec(cameraNum):
     selectedCam = cameras[int(cameraNum)]
     fileName = datetime.datetime.now().strftime("%X%m%d%y")
@@ -50,15 +51,18 @@ def last30Sec(cameraNum):
         result.write(frame)
     result.release()
     return send_file(f"{cwd}/videos/clips/{fileName}.mp4")
-@app.route('/')
-def main():
 
-    return f"""
-     <img src='{url_for("video_feed") }'width="640" height="480">
-     <a href='{url_for("last30Sec")}' download>
-          <h1> Download last 30 Seconds </h1>
-     </a>
-    """
+@app.route('/')
+def cctv():
+    body = "<html><body style = background-color:black>"
+    for camera in cameras:
+        body += f"""<img src="{url_for("video_feed", cameraNum = camera.cameraNumber)}" alt="Video Stream">
+                <a href='{url_for("last30Sec", cameraNum = camera.cameraNumber)}' download>
+                <h1> Download last 30 Seconds </h1>
+                </a>
+        """
+    return body
+
 
 
 if __name__ == '__main__':
