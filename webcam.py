@@ -22,7 +22,9 @@ class Camera():
         self.cameraNumber = cameraNumber
 
     def gen_frames(self):
+        print("other")
         while True:
+            print("gen")
             success, frame = self.camera.read()
             if not success:
                 break

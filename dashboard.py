@@ -6,12 +6,14 @@ import string
 import os
 import sys
 
-from flask import Flask, request, send_file, redirect, url_for
+from flask import Flask, request, send_file, redirect, url_for, Response
 from firebase_admin import credentials, initialize_app, storage
 from main import IndividualPrint,SinglePrinter, Liminal
 import firebase_admin
 from firebase_admin import credentials, firestore
 import requests
+import cv2
+
 app = Flask(__name__)
 liminal = Liminal()
 
@@ -419,6 +421,31 @@ def setPrinterStatus():
                                 """
         body += f'<a href="{url_for("clean")}">Clear all displays</a>'
         return body
+
+@app.route('/camera/raw/<path:cameraNum>')
+def video_feed(cameraNum):
+    selectedCam = liminal.cameras[int(cameraNum)]
+    return Response(selectedCam.gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route('/camera/fetchlast30/<path:cameraNum>')
+def last30Sec(cameraNum):
+    selectedCam = liminal.cameras[int(cameraNum)]
+    fileName = datetime.datetime.now().strftime("%X%m%d%y")
+    result = cv2.VideoWriter(f"/videos/clips/{fileName}.mp4", cv2.VideoWriter_fourcc(*'mp4v'), selectedCam.frameRate, (640, 480))
+    for frame in selectedCam.buffer:
+        result.write(frame)
+    result.release()
+    return send_file(f"{cwd}/videos/clips/{fileName}.mp4")
+
+@app.route('/camera/cctv')
+def cctv():
+    body = "<html><body style = background-color:black>"
+    for camera in liminal.cameras:
+        body += f"""<img src="{url_for("video_feed", cameraNum = camera.cameraNumber)}" alt="Video Stream">
+                <a href='{url_for("last30Sec", cameraNum = camera.cameraNumber)}' download>
+                <h1> Download last 30 Seconds </h1>
+                </a>
+        """
+    return body
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port= 8000)

@@ -1,4 +1,4 @@
-import time, asyncio, os, pytimeparse, datetime, requests, random, math,json, socket, sys
+import time, asyncio, os, pytimeparse, datetime, requests, random, math,json, socket, sys, cv2
 from datetime import datetime, timedelta
 from octorest import OctoRest
 from firebase_admin import credentials, initialize_app, storage, firestore
@@ -60,6 +60,33 @@ class IndividualPrint():
                 print(query_ref.count)
 
         self.uuid = uuid
+
+class Camera():
+    def __init__(self, cameraNumber):
+        self.printer = None
+        self.buffer = []
+        self.frameRate = 24
+        self.rollingTime = 30
+        self.camera = cv2.VideoCapture(cameraNumber)
+        self.cameraNumber = cameraNumber
+
+    def gen_frames(self):
+        print("other")
+        while True:
+            print("gen")
+            success, frame = self.camera.read()
+            if not success:
+                break
+            else:
+                self.buffer.append(frame)
+                if len(self.buffer) >= (self.frameRate * self.rollingTime):
+                    for number in range(0, len(self.buffer) - (self.frameRate * self.rollingTime)):
+                        del self.buffer[:number]
+                ret, buffer = cv2.imencode('.jpg', frame)
+                frame = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
 
 
 class Mk4Printer():
@@ -275,6 +302,8 @@ class Liminal():
         self.config = json.load(open(f"{cwd}/ref/config.json"))
         self.printers = []
         self.MK4Printers = []
+        #ADD DYNAMIC CAMERA STARTUP
+        self.cameras = [Camera(0)]
         self.accounts = list(self.config["students"].keys())
         for item in self.config:
             if "ipAddress" in self.config[item]:
