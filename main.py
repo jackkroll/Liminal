@@ -61,31 +61,6 @@ class IndividualPrint():
 
         self.uuid = uuid
 
-class Camera():
-    def __init__(self, cameraNumber):
-        self.printer = None
-        self.buffer = []
-        self.frameRate = 24
-        self.rollingTime = 30
-        self.camera = cv2.VideoCapture(cameraNumber)
-        self.cameraNumber = cameraNumber
-
-    def gen_frames(self):
-        print("other")
-        while True:
-            print("gen")
-            success, frame = self.camera.read()
-            if not success:
-                break
-            else:
-                self.buffer.append(frame)
-                if len(self.buffer) >= (self.frameRate * self.rollingTime):
-                    for number in range(0, len(self.buffer) - (self.frameRate * self.rollingTime)):
-                        del self.buffer[:number]
-                ret, buffer = cv2.imencode('.jpg', frame)
-                frame = buffer.tobytes()
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 
 
@@ -187,7 +162,10 @@ class SinglePrinter():
         #closedOrError means the printer is disconnected (possibly due to an error)
         self.queue = []
 
-
+    def updateState(self):
+        state = self.printer.state
+        self.state = state
+        return state
 
     def preheat(self):
         """
@@ -397,4 +375,46 @@ def parseGCODE(link):
     except:
         return None
 
+class Camera():
+    def __init__(self, cameraNumber, printer : SinglePrinter):
+        self.printer = printer
+        self.buffer = []
+        self.timelapseBuffer = []
+        self.frameRate = 24
+        self.rollingTime = 30
+        self.camera = cv2.VideoCapture(cameraNumber)
+        self.cameraNumber = cameraNumber
+        self.timelapseDelay = 1440
 
+
+    def gen_frames(self):
+        while True:
+            success, frame = self.camera.read()
+            if not success:
+                break
+            else:
+                self.buffer.append(frame)
+                if self.printer.updateState() == "printing" and self.printer.fetchNozzleTemp()["actual"] >= 100:
+                    if self.timelapseDelay <= 0:
+                        self.timelapseBuffer.append(frame)
+                        self.timelapseDelay = 1440
+                    else:
+                        self.timelapseDelay -= 1
+
+                else:
+                    if len(self.timelapseBuffer) >= 10:
+                        fileName = datetime.datetime.now().strftime("%X%m%d%y")
+                        result = cv2.VideoWriter(f"/videos/clips/{fileName}.mp4", cv2.VideoWriter_fourcc(*'mp4v'),
+                                                 self.frameRate, (640, 480))
+                        for frame in self.timelapseBuffer:
+                            result.write(frame)
+                        result.release()
+                        self.timelapseBuffer = 0
+
+                if len(self.buffer) >= (self.frameRate * self.rollingTime):
+                    for number in range(0, len(self.buffer) - (self.frameRate * self.rollingTime)):
+                        del self.buffer[:number]
+                ret, buffer = cv2.imencode('.jpg', frame)
+                frame = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
