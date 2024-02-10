@@ -320,7 +320,21 @@ def changeIPAddr():
         with open(f"{cwd}/ref/config.json", "w") as f:
             json.dump(jsonValues,f,indent=4)
         return redirect(url_for("setPrinterStatus"))
-
+        
+@app.route('/dev/ipMK4',methods = ["GET", "POST"])
+def changeIPAddrMK4():
+    if request.method == "GET":
+        return redirect(url_for("setPrinterStatus"))
+    else:
+        with open(f"{cwd}/ref/config.json", "r") as f:
+            changedIP = request.form.get("printer")
+            newAddress = request.form.get("addr")
+            jsonValues = json.load(f)
+            jsonValues[changedIP]["Mk4ipAddress"] = newAddress
+        with open(f"{cwd}/ref/config.json", "w") as f:
+            json.dump(jsonValues,f,indent=4)
+        return redirect(url_for("setPrinterStatus"))
+        
 @app.route('/dev/offline',methods = ["GET", "POST"])
 def setPrinterOffline():
     if request.method == "GET":
@@ -368,7 +382,7 @@ def ipManagement():
     </style>
     """
     for item in jsonValues:
-        if "ipAddress" in item:
+        if "ipAddress" in jsonValues[item]:
             body += f'<h1 style="color:coral"> {item} </h1>'
             body += f"""
             <form style="color:white" action="{url_for('changeIPAddr')}" method="post", enctype="multipart/form-data">
@@ -377,6 +391,16 @@ def ipManagement():
             <button type="submit">Update IP Address</button>
             </form>
             """
+        if "Mk4IPAddress" in jsonValues[item]:
+            body += f'<h1 style="color:coral"> {item} </h1>'
+            body += f"""
+            <form style="color:white" action="{url_for('changeIPAddrMK4')}" method="post", enctype="multipart/form-data">
+            <input type="hidden" name="printer" value="{item}">
+            <input type="text" name="printer" value="{jsonValues[item]["Mk4IPAddress"]}">
+            <button type="submit">Update IP Address</button>
+            </form>
+            """
+    
     body += """
     '<h1 style="color:red"> WARNING: Changing these values may result in this software not recognizing printers, only do this if you know what you're doing </h1>'
     """
