@@ -21,6 +21,29 @@ class Camera():
         self.camera = cv2.VideoCapture(cameraNumber)
         self.cameraNumber = cameraNumber
 
+    def stream(self):
+        while True:
+            success, frame = self.camera.read()
+            if not success:
+                print("[ERROR] Issue reading data from camera")
+            else:
+                ret, buffer = cv2.imencode('.jpg', frame)
+                frame = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+    def backgroundLogger(self):
+        while True:
+            success, frame = self.camera.read()
+            if not success:
+                print("[ERROR] Issue reading data from camera")
+            else:
+                ret, buffer = cv2.imencode('.jpg', frame)
+                frame = buffer.tobytes()
+                self.buffer.append(frame)
+                if len(self.buffer) >= (self.frameRate * self.rollingTime):
+                    for number in range(0, len(self.buffer) - (self.frameRate * self.rollingTime)):
+                        del self.buffer[:number]
+                
     def gen_frames(self):
         print("other")
         while True:
