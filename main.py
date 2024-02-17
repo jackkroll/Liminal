@@ -280,8 +280,6 @@ class Liminal():
         self.config = json.load(open(f"{cwd}/ref/config.json"))
         self.printers = []
         self.MK4Printers = []
-        #ADD DYNAMIC CAMERA STARTUP
-        self.cameras = [Camera(0)]
         self.accounts = list(self.config["students"].keys())
         for item in self.config:
             if "ipAddress" in self.config[item]:

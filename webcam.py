@@ -13,13 +13,15 @@ if sys.platform == "win32":
 else:
     cwd = "/home/jack/Documents/Liminal-master"
 class Camera():
-    def __init__(self, cameraNumber):
+    def __init__(self, cameraIndex, cameraNumber, cameraName = None):
         self.printer = None
         self.buffer = []
         self.frameRate = 24
         self.rollingTime = 30
-        self.camera = cv2.VideoCapture(cameraNumber)
+        self.camera = cv2.VideoCapture(cameraIndex)
+        self.index = cameraIndex
         self.cameraNumber = cameraNumber
+        self.cameraName = cameraName
 
     def stream(self):
         while True:
@@ -61,15 +63,27 @@ class Camera():
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-cameras = [Camera(0)]
-
+class CCTV():
+    def __init__(self):
+        self.cameras = []
+        initalized = 0
+        maxScan = 10
+        for i in range(0, maxScan):
+            possibleCamera = cv2.VideoCapture(i)
+            if not possibleCamera.read()[0]:
+                #Camera not on port
+                break
+            else:
+                initalized += 1
+                self.cameras.append(Camera(i, initalized))
+cctv = CCTV()
 @app.route('/camera/raw/<path:cameraNum>')
 def video_feed(cameraNum):
-    selectedCam = cameras[int(cameraNum)]
+    selectedCam = cctv.cameras[int(cameraNum)]
     return Response(selectedCam.gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 @app.route('/camera/fetchlast30/<path:cameraNum>')
 def last30Sec(cameraNum):
-    selectedCam = cameras[int(cameraNum)]
+    selectedCam = cctv.cameras[int(cameraNum)]
     fileName = datetime.datetime.now().strftime("%X%m%d%y")
     result = cv2.VideoWriter(f"/videos/clips/{fileName}.mp4", cv2.VideoWriter_fourcc(*'mp4v'), selectedCam.frameRate, (640, 480))
     for frame in selectedCam.buffer:
@@ -80,7 +94,7 @@ def last30Sec(cameraNum):
 @app.route('/')
 def cctv():
     body = "<html><body style = background-color:black>"
-    for camera in cameras:
+    for camera in cctv.cameras:
         body += f"""<img src="{url_for("video_feed", cameraNum = camera.cameraNumber)}" alt="Video Stream">
                 <a href='{url_for("last30Sec", cameraNum = camera.cameraNumber)}' download>
                 <h1> Download last 30 Seconds </h1>
