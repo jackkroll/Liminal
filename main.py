@@ -10,12 +10,14 @@ if sys.platform == "win32":
     cwd = "C:/Users/jackk/Desktop/Liminal"
 else:
     cwd = "/home/jack/Documents/Liminal-master"
-
-cred = credentials.Certificate(f"{cwd}/ref/liminal-302-749fb908ba9b.json")
-firebase_admin.initialize_app(cred,{'storageBucket': 'liminal-302.appspot.com'})
-db = firestore.client()
-prints_ref = db.collection('prints')
-bucket = storage.bucket()
+try:
+    cred = credentials.Certificate(f"{cwd}/ref/liminal-302-749fb908ba9b.json")
+    firebase_admin.initialize_app(cred,{'storageBucket': 'liminal-302.appspot.com'})
+    db = firestore.client()
+    prints_ref = db.collection('prints')
+    bucket = storage.bucket()
+except Exception as e:
+    print("[ERROR] Cannot properly connect to firebase")
 def make_client(url, apikey):
     """Creates and returns an instance of the OctoRest client.
 
@@ -274,6 +276,45 @@ class SinglePrinter():
   #      self.gcode = gcode
    #     self.uploader = uploader
 
+class Camera():
+    def __init__(self, cameraNumber, cameraIndex):
+        self.printer = None
+        self.buffer = []
+        self.frameRate = 24
+        self.rollingTime = 30
+        self.resolution = None
+        self.camera = cv2.VideoCapture(cameraIndex)
+        self.index = cameraIndex
+        self.cameraNumber = cameraNumber
+
+    def stream(self):
+        while True:
+            if len(self.buffer) > 0:
+                yield (b'--frame\r\n'
+                                       b'Content-Type: image/jpeg\r\n\r\n' + self.buffer[-1] + b'\r\n')
+            else:
+                yield ("None")
+    def backgroundLogger(self):
+        while True:
+            success, frame = self.camera.read()
+            if not success:
+                print("[ERROR] Issue reading data from camera")
+                break
+            else:
+                ret, buffer = cv2.imencode('.jpg', frame)
+                if self.resolution == None:
+                    try:
+                        self.resolution = (buffer.shape[1],buffer.shape[0])
+                    except Exception:
+                        print("[WARNING] Resolution unable to be set, defaulted to 680x480")
+                        self.resolution = (680,480)
+                frame = buffer.tobytes()
+                self.buffer.append(frame)
+                if len(self.buffer) >= (self.frameRate * self.rollingTime):
+                    for number in range(0, len(self.buffer) - (self.frameRate * self.rollingTime)):
+                        del self.buffer[:number]
+                time.sleep(1/self.frameRate)
+
 class Liminal():
 
     def __init__(self):
@@ -308,6 +349,18 @@ class Liminal():
         print(f"[INFO] The system IP address is: {self.ipAddress}")
         for printer in self.printers:
             printer.displayMSG(f"LMNL: {self.ipAddress}")
+
+        self.cameras = []
+        initalized = -1
+        for i in range (10):
+            initalized+=1
+            self.cameras.append(Camera(initalized, i))
+            if not self.cameras[-1].camera.read()[0]:
+                initalized -= 1
+                self.cameras.pop()
+                print(f"Camera on port {i} unreachable")
+            else:
+                print(f"Camera Initalized on port {i}")
 
 
         #State Map
@@ -372,47 +425,3 @@ def parseGCODE(link):
         return [nozzleDiameter, timedelta.seconds]
     except:
         return None
-
-class Camera():
-    def __init__(self, cameraNumber, printer : SinglePrinter):
-        self.printer = printer
-        self.buffer = []
-        self.timelapseBuffer = []
-        self.frameRate = 24
-        self.rollingTime = 30
-        self.camera = cv2.VideoCapture(cameraNumber)
-        self.cameraNumber = cameraNumber
-        self.timelapseDelay = 1440
-
-
-    def gen_frames(self):
-        while True:
-            success, frame = self.camera.read()
-            if not success:
-                break
-            else:
-                self.buffer.append(frame)
-                if self.printer.updateState() == "printing" and self.printer.fetchNozzleTemp()["actual"] >= 100:
-                    if self.timelapseDelay <= 0:
-                        self.timelapseBuffer.append(frame)
-                        self.timelapseDelay = 1440
-                    else:
-                        self.timelapseDelay -= 1
-
-                else:
-                    if len(self.timelapseBuffer) >= 10:
-                        fileName = datetime.datetime.now().strftime("%X%m%d%y")
-                        result = cv2.VideoWriter(f"/videos/clips/{fileName}.mp4", cv2.VideoWriter_fourcc(*'mp4v'),
-                                                 self.frameRate, (640, 480))
-                        for frame in self.timelapseBuffer:
-                            result.write(frame)
-                        result.release()
-                        self.timelapseBuffer = 0
-
-                if len(self.buffer) >= (self.frameRate * self.rollingTime):
-                    for number in range(0, len(self.buffer) - (self.frameRate * self.rollingTime)):
-                        del self.buffer[:number]
-                ret, buffer = cv2.imencode('.jpg', frame)
-                frame = buffer.tobytes()
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')

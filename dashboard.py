@@ -1,18 +1,10 @@
-import datetime
-import json
-import random
-import time
-import string
-import os
-import sys
-
+import datetime,json,random,time,string,os,sys, threading, cv2, requests
 from flask import Flask, request, send_file, redirect, url_for, Response
 from firebase_admin import credentials, initialize_app, storage
 from main import IndividualPrint,SinglePrinter, Liminal
 import firebase_admin
 from firebase_admin import credentials, firestore
-import requests
-import cv2
+import numpy as np
 
 app = Flask(__name__)
 liminal = Liminal()
@@ -449,19 +441,21 @@ def setPrinterStatus():
 @app.route('/camera/raw/<path:cameraNum>')
 def video_feed(cameraNum):
     selectedCam = liminal.cameras[int(cameraNum)]
-    return Response(selectedCam.gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(selectedCam.stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
 @app.route('/camera/fetchlast30/<path:cameraNum>')
 def last30Sec(cameraNum):
     selectedCam = liminal.cameras[int(cameraNum)]
     fileName = datetime.datetime.now().strftime("%X%m%d%y")
-    result = cv2.VideoWriter(f"/videos/clips/{fileName}.mp4", cv2.VideoWriter_fourcc(*'mp4v'), selectedCam.frameRate, (640, 480))
+    result = cv2.VideoWriter(f"{cwd}/videos/clips/{fileName}.mp4", cv2.VideoWriter_fourcc(*'mp4v'), selectedCam.frameRate,(1920,1080))
     for frame in selectedCam.buffer:
-        result.write(frame)
+        result.write(cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR))
     result.release()
+    print("released")
+    time.sleep(2)
     return send_file(f"{cwd}/videos/clips/{fileName}.mp4")
 
-@app.route('/camera/cctv')
-def cctv():
+@app.route('/cctv')
+def cctvView():
     body = "<html><body style = background-color:black>"
     for camera in liminal.cameras:
         body += f"""<img src="{url_for("video_feed", cameraNum = camera.cameraNumber)}" alt="Video Stream">
@@ -472,4 +466,10 @@ def cctv():
     return body
 
 if __name__ == '__main__':
-    app.run(debug=True, host="0.0.0.0", port= 8000)
+    threads = []
+    for camera in liminal.cameras:
+        camThread = threading.Thread(target=camera.backgroundLogger)
+        threads.append(camThread)
+    for thread in threads:
+        thread.start()
+    app.run("0.0.0.0", 8000, False)
