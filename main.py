@@ -343,7 +343,7 @@ class Liminal():
                     self.printers.append(tempPrinter)
                     for camera in self.cameras:
                         try:
-                            if camera.index == self.config[item]["cameraIndex"]:
+                            if camera.index == int(self.config[item]["cameraIndex"]):
                                 camera.printer = tempPrinter
                                 print("Camera Matched with Printer")
                         except:

@@ -63,7 +63,7 @@ def index():
             </form>
             '''
             for camera in liminal.cameras:
-                if camera.printer.nickname == printer.nickname:
+                if camera.printer != None and camera.printer.nickname == printer.nickname:
                     body += f"""<img src="{url_for("video_feed", cameraNum = camera.cameraNumber)}" alt="Video Stream">"""
             if printer.fetchNozzleTemp() != None:
                 body += f'<h3 style="color:white;">Nozzle: {printer.fetchNozzleTemp()["actual"]}</h3>'
@@ -115,6 +115,9 @@ def index():
                 print("[ERROR] Error refreshing data when displaying dashboard")
             else:
                 body += f'<h1 style="color:coral;">{printer.nickname}</h1>'
+                for camera in liminal.cameras:
+                    if camera.printer != None and camera.printer.nickname == printer.nickname:
+                        body += f"""<img src="{url_for("video_feed", cameraNum=camera.cameraNumber)}" alt="Video Stream">"""
                 body += f'<h3 style="color:white;">Nozzle: {printer.fetchNozzleTemp()}</h3>'
                 body += f'<h3 style="color:white;">Bed: {printer.fetchBedTemp()}</h3>'
                 body += f"""
@@ -460,6 +463,7 @@ def setPrinterStatus():
 
         body += '<h1 style="color:coral"> Change Printer Camera </h1>'
         for camera in liminal.cameras:
+            body += f"""<img src="{url_for("video_feed", cameraNum=camera.cameraNumber)}" alt="Video Stream">"""
             body += f"""
             <form style="color:white" action="{url_for('changeCamMemory')}" method="post" enctype="multipart/form-data">
             <input type="hidden" name="index" value="{camera.index}">
