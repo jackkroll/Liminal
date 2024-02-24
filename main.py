@@ -322,6 +322,17 @@ class Liminal():
         self.printers = []
         self.MK4Printers = []
         self.accounts = list(self.config["students"].keys())
+        self.cameras = []
+        initalized = -1
+        for i in range (10):
+            initalized+=1
+            self.cameras.append(Camera(initalized, i))
+            if not self.cameras[-1].camera.read()[0]:
+                initalized -= 1
+                self.cameras.pop()
+                print(f"Camera on port {i} unreachable")
+            else:
+                print(f"Camera Initalized on port {i}")
         for item in self.config:
             if "ipAddress" in self.config[item]:
                 tempPrinter = SinglePrinter(item, self.config[item]["ipAddress"], self.config[item]["apiKey"], self.config[item]["prefix"])
@@ -330,6 +341,14 @@ class Liminal():
                 else:
                     print("[OPERATIONAL] Mk3 Printer has been successfully added")
                     self.printers.append(tempPrinter)
+                    for camera in self.cameras:
+                        try:
+                            if camera.index == self.config[item]["cameraIndex"]:
+                                camera.printer = tempPrinter
+                                print("Camera Matched with Printer")
+                        except:
+                            print("[NOTICE] Camera config not added for printer")
+
         for item in self.config:
             if "Mk4IPAddress" in self.config[item]:
                 #nickname, ipAddress, apiKey, prefix
@@ -350,17 +369,7 @@ class Liminal():
         for printer in self.printers:
             printer.displayMSG(f"LMNL: {self.ipAddress}")
 
-        self.cameras = []
-        initalized = -1
-        for i in range (10):
-            initalized+=1
-            self.cameras.append(Camera(initalized, i))
-            if not self.cameras[-1].camera.read()[0]:
-                initalized -= 1
-                self.cameras.pop()
-                print(f"Camera on port {i} unreachable")
-            else:
-                print(f"Camera Initalized on port {i}")
+
 
 
         #State Map

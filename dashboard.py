@@ -62,8 +62,9 @@ def index():
             <input type = "submit" value = "Preheat"> 
             </form>
             '''
-            if config[printer.nickname]["camActive"]:
-                body += f'<img src="{config[printer.nickname]["webcamURL"]}" alt="Video Stream">'
+            for camera in liminal.cameras:
+                if camera.printer.nickname == printer.nickname:
+                    body += f"""<img src="{url_for("video_feed", cameraNum = camera.cameraNumber)}" alt="Video Stream">"""
             if printer.fetchNozzleTemp() != None:
                 body += f'<h3 style="color:white;">Nozzle: {printer.fetchNozzleTemp()["actual"]}</h3>'
             if printer.fetchBedTemp() != None:
@@ -312,7 +313,24 @@ def changeIPAddr():
         with open(f"{cwd}/ref/config.json", "w") as f:
             json.dump(jsonValues,f,indent=4)
         return redirect(url_for("setPrinterStatus"))
-        
+@app.route('/dev/camera',methods = ["GET", "POST"])
+def changeCamMemory():
+    if request.method == "GET":
+        return redirect(url_for("setPrinterStatus"))
+    else:
+        with open(f"{cwd}/ref/config.json", "r") as f:
+            changedPrinter = request.form.get("printer")
+            newIndex = request.form.get("index")
+            jsonValues = json.load(f)
+            jsonValues[changedPrinter]["cameraIndex"] = newIndex
+            for camera in liminal.cameras:
+                if camera.index == newIndex:
+                    for printer in liminal.printers + liminal.MK4Printers:
+                        if printer.nickname == changedPrinter:
+                            camera.printer = printer
+        with open(f"{cwd}/ref/config.json", "w") as f:
+            json.dump(jsonValues,f,indent=4)
+        return redirect(url_for("setPrinterStatus"))
 @app.route('/dev/ipMK4',methods = ["GET", "POST"])
 def changeIPAddrMK4():
     if request.method == "GET":
@@ -403,6 +421,9 @@ def setPrinterStatus():
     file = open(f"{cwd}/ref/values.json")
     jsonValues = json.load(file)
     file.close()
+    printerOptions = []
+    for printer in liminal.printers + liminal.MK4Printers:
+        printerOptions.append(printer.nickname)
     if request.method == "GET":
         body = "<html><body style = background-color:black>"
         body += """
@@ -432,9 +453,26 @@ def setPrinterStatus():
                 body += f"""
                     <form style="color:white" action="{url_for('setPrinterOnline')}" method="post" enctype="multipart/form-data">
                     <input type="hidden" name="printer" value="{printer.code}">
+                    <input type="hidden" name="printer" value="{printer.code}">
                     <button type="submit">Switch Online</button>
                     </form>
                                 """
+
+        body += '<h1 style="color:coral"> Change Printer Camera </h1>'
+        for camera in liminal.cameras:
+            body += f"""
+            <form style="color:white" action="{url_for('changeCamMemory')}" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="index" value="{camera.index}">
+            <select name="printer">"""
+            for printerOption in printerOptions:
+                body+= f"""
+                <option value={printerOption}> {printerOption} </option>
+                """
+            body += f"""
+            </select>
+            <button type="submit">Switch Camera to Printer</button>
+            </form>
+            """
         body += f'<a href="{url_for("clean")}">Clear all displays</a>'
         return body
 
@@ -458,7 +496,12 @@ def last30Sec(cameraNum):
 def cctvView():
     body = "<html><body style = background-color:black>"
     for camera in liminal.cameras:
+        if camera.printer == None:
+            cameraTxt = "No printer Assigned"
+        else:
+            cameraTxt = camera.printer.nickname
         body += f"""<img src="{url_for("video_feed", cameraNum = camera.cameraNumber)}" alt="Video Stream">
+                <h1> {cameraTxt} </h1>
                 <a href='{url_for("last30Sec", cameraNum = camera.cameraNumber)}' download>
                 <h1> Download last 30 Seconds </h1>
                 </a>
