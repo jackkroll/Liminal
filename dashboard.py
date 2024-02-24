@@ -470,7 +470,7 @@ def setPrinterStatus():
             <select name="printer">"""
             for printerOption in printerOptions:
                 body+= f"""
-                <option value={printerOption}> {printerOption} </option>
+                <option value="{printerOption}"> {printerOption} </option>
                 """
             body += f"""
             </select>
