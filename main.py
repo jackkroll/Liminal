@@ -286,6 +286,7 @@ class Camera():
     def __init__(self, cameraNumber, cameraIndex):
         self.printer = None
         self.buffer = []
+        self.timelapse = []
         self.frameRate = 24
         self.rollingTime = 30
         self.resolution = None
@@ -300,12 +301,34 @@ class Camera():
                                        b'Content-Type: image/jpeg\r\n\r\n' + self.buffer[-1] + b'\r\n')
             else:
                 yield ("None")
+
+    def timelapseLogger(self):
+        if self.printer != None and len(self.buffer)<0:
+            if "printing" in self.printer.state.lower() and self.printer.fetchNozzleTemp()["actual"] >= 200:
+                self.timelapse.append(self.buffer[-1])
+                time.sleep(60)
+            elif len(self.timelapse) >= 0:
+                print("Export Timelapse here")
+                self.timelapse = []
+        elif len(self.buffer)<0:
+            time.sleep(10)
+        else:
+            time.sleep(300)
     def backgroundLogger(self):
+        retrys = 0
         while True:
             success, frame = self.camera.read()
             if not success:
                 print("[ERROR] Issue reading data from camera")
-                break
+                retrys+=1
+                if retrys <= 5:
+                    time.sleep(5)
+                elif retrys <= 10:
+                    time.sleep(15)
+                elif retrys <= 20:
+                    time.sleep(60)
+                elif retrys <= 50:
+                    time.sleep(300)
             else:
                 ret, buffer = cv2.imencode('.jpg', frame)
                 if self.resolution == None:

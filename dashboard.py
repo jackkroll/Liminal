@@ -560,8 +560,13 @@ def cctvView():
 if __name__ == '__main__':
     threads = []
     for camera in liminal.cameras:
+        #Camera buffer
         camThread = threading.Thread(target=camera.backgroundLogger)
         threads.append(camThread)
+        #Timelapse logger
+        camThread = threading.Thread(target=camera.timelapseLogger)
+        threads.append(camThread)
+
     for thread in threads:
         thread.start()
     app.run("0.0.0.0", 80, False)
