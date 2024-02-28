@@ -164,6 +164,12 @@ class SinglePrinter():
         #closedOrError means the printer is disconnected (possibly due to an error)
         self.queue = []
 
+    def pause(self):
+        self.printer.pause()
+        return True
+    def resume(self):
+        self.printer.resume()
+        return True
     def updateState(self):
         state = self.printer.state
         self.state = state

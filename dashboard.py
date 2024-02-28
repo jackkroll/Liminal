@@ -54,14 +54,27 @@ def index():
             liminal.printers.remove(printer)
             continue
         if printer.printer != None and printer.code not in jsonValues["printersDown"]:
-
-            body += f'<h1 style="color:coral;">{printer.nickname}</h1>'
+            body += f'<h1 style="color:coral;"> <a href = {printer.url}>{printer.nickname}</a></h1>'
             body += f'''
             <form action = "{url_for("functions")}" method = post>
             <input type="hidden" name="printer" value="{printer.nickname}">
             <input type = "submit" value = "Preheat"> 
             </form>
             '''
+            if "paused" in printer.updateState().lower():
+                body += f'''
+                            <form action = "{url_for("resumePrint")}" method = post>
+                            <input type="hidden" name="printer" value="{printer.nickname}">
+                            <input type = "submit" value = "Resume Print"> 
+                            </form>
+                            '''
+            elif "printing" in printer.updateState().lower():
+                body += f'''
+                            <form action = "{url_for("pausePrint")}" method = post>
+                            <input type="hidden" name="printer" value="{printer.nickname}">
+                            <input type = "submit" value = "Pause Print"> 
+                            </form>
+                '''
             for camera in liminal.cameras:
                 if camera.printer != None and camera.printer.nickname == printer.nickname:
                     body += f"""<img src="{url_for("video_feed", cameraNum = camera.cameraNumber)}" alt="Video Stream">"""
@@ -114,7 +127,7 @@ def index():
                     liminal.printers.remove(printer)
                 print(f"[ERROR] Error refreshing data when displaying dashboard for {printer.nickname}")
             else:
-                body += f'<h1 style="color:coral;">{printer.nickname}</h1>'
+                body += f'<h1 style="color:coral;"><a href = http://{printer.ip}>{printer.nickname}</a> </h1>'
                 for camera in liminal.cameras:
                     if camera.printer != None and camera.printer.nickname == printer.nickname:
                         body += f"""<img src="{url_for("video_feed", cameraNum=camera.cameraNumber)}" alt="Video Stream">"""
@@ -165,6 +178,35 @@ def functions():
                 if request.form.get("printer") == printer.nickname:
                     printer.preheat()
             return redirect(url_for("index"))
+@app.route('/pause', methods = ["POST"])
+def pausePrint():
+    if request.form.get("printer") == "all":
+        for printer in liminal.printers:
+            printer.pause()
+        return redirect(url_for("index"))
+    else:
+        for printer in liminal.printers:
+            if request.form.get("printer") == printer.nickname:
+                printer.pause()
+                return redirect(url_for("index"))
+        for printer in liminal.MK4Printers:
+            if request.form.get("printer") == printer.nickname:
+                printer.pause()
+
+@app.route('/resume', methods = ["POST"])
+def resumePrint():
+    if request.form.get("printer") == "all":
+        for printer in liminal.printers:
+            printer.resume()
+        return redirect(url_for("index"))
+    else:
+        for printer in liminal.printers:
+            if request.form.get("printer") == printer.nickname:
+                printer.resume()
+                return redirect(url_for("index"))
+        for printer in liminal.MK4Printers:
+            if request.form.get("printer") == printer.nickname:
+                printer.resume()
 @app.route('/print', methods = ["GET", "POST"])
 #Form components nessesary:
 #printer : Printer Name ex. Left Printer
@@ -522,4 +564,4 @@ if __name__ == '__main__':
         threads.append(camThread)
     for thread in threads:
         thread.start()
-    app.run("0.0.0.0", 8000, False)
+    app.run("0.0.0.0", 80, False)
