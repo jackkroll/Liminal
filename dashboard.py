@@ -217,6 +217,7 @@ def resumePrint():
 #printercode: unestablished right now, but is a needed input
 #nickname: The name of the print
 def uploadPrintURL():
+
     if request.method == "GET":
         return redirect(url_for("index"))
     else:
@@ -255,6 +256,7 @@ def uploadPrintURL():
                             else:
                                 binaryGcode = False
                             printer.upload(file_contents, nickname, binaryGcode)
+                            return redirect(url_for("mk4LoadingScreen"))
                             print("[OPERATIONAL] Successfully printed onto a Mk4 printer")
                         else:
                             print(f"[ERROR] The printer {request.form.get('printer')} is not registered")
@@ -574,6 +576,18 @@ def cctvView():
                 </a>
         """
     return body
+@app.route('/mk4Load/<path:printerNickname>')
+def mk4LoadingScreen(printerNickname):
+    for printer in liminal.MK4Printers:
+        if printer.nickname == printerNickname:
+            printer.refreshData()
+
+            if printer.transfer != None:
+                return f"""
+                <meta http-equiv="refresh" content="1" /> 
+                Mk4 Transfer status:<br>{printer.transfer}% Complete"""
+            else:
+                return "<h1>Transfer status Complete?<\h1>"
 
 if __name__ == '__main__':
     threads = []

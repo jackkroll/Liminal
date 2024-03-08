@@ -77,6 +77,7 @@ class Mk4Printer():
         self.key = apiKey
         self.prefix = prefix
         self.nickname = nickname
+        self.transfer = None
 
     def refreshData(self):
         headers = {"X-API-KEY": self.key}
@@ -91,6 +92,10 @@ class Mk4Printer():
         else:
             self.currentPrintID = None
             self.progress = None
+        if "transfer" in data and "progress" in data["transfer"]:
+            self.transfer = data["transfer"]["progress"]
+        else:
+            self.transfer = None
         print(response.json())
 
     def fetchNozzleTemp(self):
@@ -112,7 +117,9 @@ class Mk4Printer():
         response = requests.put(f"http://{self.ip}/api/v1/files/{storage}/{path}", headers=headers, data=fileTxt)
         #print(response.text)
         return True
-
+    def transferStatus(self):
+        self.refreshData()
+        return self.transfer
     def abort(self):
         self.refreshData()
         headers = {"X-API-KEY": self.key}
