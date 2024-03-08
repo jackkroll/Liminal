@@ -338,7 +338,7 @@ class Camera():
                 ret, buffer = cv2.imencode('.jpg', frame)
                 if self.resolution == None:
                     try:
-                        self.resolution = (buffer.shape[1],buffer.shape[0])
+                        self.resolution = (frame.shape[1],frame.shape[0])
                     except Exception:
                         print("[WARNING] Resolution unable to be set, defaulted to 680x480")
                         self.resolution = (680,480)
