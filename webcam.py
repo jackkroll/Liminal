@@ -78,8 +78,6 @@ def last30Sec(cameraNum):
     for frame in selectedCam.buffer:
         result.write(cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR))
     result.release()
-    print("released")
-    time.sleep(2)
     return send_file(f"{cwd}/videos/clips/{fileName}.mp4")
 
 @app.route('/')

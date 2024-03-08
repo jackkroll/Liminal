@@ -61,14 +61,14 @@ def index():
             <input type = "submit" value = "Preheat"> 
             </form>
             '''
-            if "paused" in printer.updateState().lower():
+            if "paused" in printer.updateState():
                 body += f'''
                             <form action = "{url_for("resumePrint")}" method = post>
                             <input type="hidden" name="printer" value="{printer.nickname}">
                             <input type = "submit" value = "Resume Print"> 
                             </form>
                             '''
-            elif "printing" in printer.updateState().lower():
+            elif "printing" in printer.updateState():
                 body += f'''
                             <form action = "{url_for("pausePrint")}" method = post>
                             <input type="hidden" name="printer" value="{printer.nickname}">
@@ -134,29 +134,30 @@ def index():
                 body += f'<h3 style="color:white;">Nozzle: {printer.fetchNozzleTemp()}</h3>'
                 body += f'<h3 style="color:white;">Bed: {printer.fetchBedTemp()}</h3>'
                 if "printing" in printer.state.lower() and printer.fetchNozzleTemp() >= 200:
+                    body += f'<h3 style="color:white;">Currently in use | {printer.progress}% Complete</h3>'
+                else:
                     body += f"""
-                        <form style="color:white" action="{url_for('uploadPrintURL')}" method="post" enctype="multipart/form-data">
-                        <input type="hidden" name="printer" value="{printer.nickname}">
-                        <input type="hidden" name="printercode" value="{printer.prefix}">
-                        <label for="creator">Uploader</label>
-                        <select name="creator" id="creator">
-                        """
+                                           <form style="color:white" action="{url_for('uploadPrintURL')}" method="post" enctype="multipart/form-data">
+                                           <input type="hidden" name="printer" value="{printer.nickname}">
+                                           <input type="hidden" name="printercode" value="{printer.prefix}">
+                                           <label for="creator">Uploader</label>
+                                           <select name="creator" id="creator">
+                                           """
                     for account in liminal.accounts:
                         body += f'<option value="{account}">{account}</option>'
                     body += f"""
-                                    </select>
-                                    <input type="hidden" name="material" placeholder="notSet">
-                                    <label for="url">GCODE File:</label>
-                                    <input type="file" id="url" name="gcode" accept=".gcode">
-                                    <label for="nickname">Print Name:</label>
-                                    <input type="text" id="nickname" name="nickname" placeholder="nickname">
-                                    <label for="approval">Approval Code:</label>
-                                    <input type="text" id="approval" name="2FA" placeholder="2FA">
-                                    <button type="submit">Upload</button>
-                                    </form>
-                                    """
-                else:
-                    body += f'<h3 style="color:white;">Currently in use | {printer.progress}% Complete</h3>'
+                            </select>
+                            <input type="hidden" name="material" placeholder="notSet">
+                                                       <label for="url">GCODE File:</label>
+                                                       <input type="file" id="url" name="gcode" accept=".gcode,.bgcode">
+                                                       <label for="nickname">Print Name:</label>
+                                                       <input type="text" id="nickname" name="nickname" placeholder="nickname">
+                                                       <label for="approval">Approval Code:</label>
+                                                       <input type="text" id="approval" name="2FA" placeholder="2FA">
+                                                       <button type="submit">Upload</button>
+                                                       </form>
+                                                       """
+
     body += "</body></html>"
 
     return body
@@ -249,7 +250,11 @@ def uploadPrintURL():
                         print("[OPERATIONAL] Successfully printed onto a Mk3 printer")
                     else:
                         if printer in liminal.MK4Printers:
-                            printer.upload(file_contents, nickname)
+                            if request.files["gcode"].filename.split(".")[-1] == "bgcode":
+                                binaryGcode = True
+                            else:
+                                binaryGcode = False
+                            printer.upload(file_contents, nickname, binaryGcode)
                             print("[OPERATIONAL] Successfully printed onto a Mk4 printer")
                         else:
                             print(f"[ERROR] The printer {request.form.get('printer')} is not registered")
@@ -533,12 +538,11 @@ def video_feed(cameraNum):
 def last30Sec(cameraNum):
     selectedCam = liminal.cameras[int(cameraNum)]
     fileName = datetime.datetime.now().strftime("%X%m%d%y")
-    result = cv2.VideoWriter(f"{cwd}/videos/clips/{fileName}.mp4", cv2.VideoWriter_fourcc(*'mp4v'), selectedCam.frameRate,(1920,1080))
+    resolution = cv2.imdecode(np.frombuffer(selectedCam.buffer[-1], np.uint8), cv2.IMREAD_COLOR).shape
+    result = cv2.VideoWriter(f"{cwd}/videos/clips/{fileName}.mp4", cv2.VideoWriter_fourcc(*'mp4v'), selectedCam.frameRate,(resolution[1],resolution[0]))
     for frame in selectedCam.buffer:
         result.write(cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR))
     result.release()
-    print("released")
-    time.sleep(2)
     return send_file(f"{cwd}/videos/clips/{fileName}.mp4")
 
 @app.route('/cctv')
@@ -569,4 +573,4 @@ if __name__ == '__main__':
 
     for thread in threads:
         thread.start()
-    app.run("0.0.0.0", 80, False)
+    app.run("0.0.0.0", 8000, True)

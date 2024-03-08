@@ -99,9 +99,12 @@ class Mk4Printer():
     def fetchBedTemp(self):
         self.refreshData()
         return self.bedTemp
-    def upload(self, fileTxt, nickname):
+    def upload(self, fileTxt, nickname, bGcode = False):
         storage = "usb"
-        path = f"{nickname}.gcode"
+        if bGcode:
+            path = f"{nickname}.bgcode"
+        else:
+            path = f"{nickname}.gcode"
         uploadLength = len(fileTxt)
         # ?0 = False, ?1 = True
         headers = {"X-API-KEY": self.key, "Content-Length": str(uploadLength), "Print-After-Upload": "?1",
@@ -319,7 +322,9 @@ class Camera():
         while True:
             success, frame = self.camera.read()
             if not success:
-                print("[ERROR] Issue reading data from camera")
+                print("[ERROR] Issue reading data from camera, attempting to reinit...")
+                self.camera.release()
+                self.camera = cv2.VideoCapture(self.index)
                 retrys+=1
                 if retrys <= 5:
                     time.sleep(5)
