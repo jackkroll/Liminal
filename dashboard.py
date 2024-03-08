@@ -529,7 +529,21 @@ def setPrinterStatus():
             """
         body += f'<a href="{url_for("clean")}">Clear all displays</a>'
         return body
-
+@app.errorhandler(500)
+def fallback():
+    body = ""
+    body += f'<h1> There was an error somewhere, he is a fallback to printer URLS: <\h1>'
+    for printer in liminal.printers:
+        try:
+            body += f'<h1 style="color:coral;"><a href = http://{printer.url}>{printer.nickname}</a> </h1>'
+        except Exception:
+            print(f"[ERROR] Error adding printer to fallback")
+    for printer in liminal.MK4Printers:
+        try:
+            body += f'<h1 style="color:coral;"><a href = http://{printer.ip}>{printer.nickname}</a> </h1>'
+        except Exception:
+            print("[ERROR] Error adding printer to falback")
+    return body
 @app.route('/camera/raw/<path:cameraNum>')
 def video_feed(cameraNum):
     selectedCam = liminal.cameras[int(cameraNum)]
