@@ -5,6 +5,8 @@ from firebase_admin import credentials, initialize_app, storage, firestore
 import firebase_admin
 from firebase_admin import credentials
 import netifaces as ni
+import cv2
+import numpy as np
 
 if sys.platform == "win32":
     cwd = "C:/Users/jackk/Desktop/Liminal"
@@ -313,14 +315,20 @@ class Camera():
                 yield ("None")
 
     def timelapseLogger(self):
-        if self.printer != None and len(self.buffer)<0:
-            if "printing" in self.printer.state.lower() and self.printer.fetchNozzleTemp()["actual"] >= 200:
+        if self.printer != None and len(self.buffer)>0:
+            if "printing" in self.printer.printer.state.lower() and self.printer.fetchNozzleTemp()["actual"] >= 200:
                 self.timelapse.append(self.buffer[-1])
                 time.sleep(60)
             elif len(self.timelapse) >= 0:
-                print("Export Timelapse here")
+                resolution = cv2.imdecode(np.frombuffer(self.buffer[-1], np.uint8), cv2.IMREAD_COLOR).shape
+                result = cv2.VideoWriter(f"{cwd}/Clip.mp4", cv2.VideoWriter_fourcc(*'mp4v'), self.frameRate,
+                                         (resolution[1], resolution[0]))
+                for frame in self.buffer:
+                    result.write(cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR))
+                result.release()
+
                 self.timelapse = []
-        elif len(self.buffer)<0:
+        elif len(self.buffer) == 0:
             time.sleep(10)
         else:
             time.sleep(300)
@@ -395,6 +403,13 @@ class Liminal():
                 #nickname, ipAddress, apiKey, prefix
                 print("[OPERATIONAL] Mk4 Printer has been successfully added")
                 self.MK4Printers.append(Mk4Printer(item, self.config[item]["Mk4IPAddress"], self.config[item]["apiKey"], self.config[item]["prefix"]))
+                for camera in self.cameras:
+                    try:
+                        if camera.index == int(self.config[item]["cameraIndex"]):
+                            camera.printer = self.MK4Printers[-1]
+                            print("[OPERATIONAL] Camera matched with Mk4 Printer")
+                    except:
+                        print("[NOTICE] Camera config not added for printer")
         self.state = "idle"
         self.estimatedBufferTime = 10
         self.approvalCode = "null"

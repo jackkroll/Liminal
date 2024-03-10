@@ -553,13 +553,12 @@ def video_feed(cameraNum):
 @app.route('/camera/fetchlast30/<path:cameraNum>')
 def last30Sec(cameraNum):
     selectedCam = liminal.cameras[int(cameraNum)]
-    fileName = datetime.datetime.now().strftime("%X%m%d%y")
     resolution = cv2.imdecode(np.frombuffer(selectedCam.buffer[-1], np.uint8), cv2.IMREAD_COLOR).shape
-    result = cv2.VideoWriter(f"{cwd}/videos/clips/{fileName}.mp4", cv2.VideoWriter_fourcc(*'mp4v'), selectedCam.frameRate,(selectedCam.resolution[1],selectedCam.resolution[0]))
+    result = cv2.VideoWriter(f"{cwd}/Clip.mp4", cv2.VideoWriter_fourcc(*'mp4v'), selectedCam.frameRate,(resolution[1],resolution[0]))
     for frame in selectedCam.buffer:
         result.write(cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR))
     result.release()
-    return send_file(f"{cwd}/videos/clips/{fileName}.mp4")
+    return send_file(f"Clip.mp4")
 
 @app.route('/cctv')
 def cctvView():
