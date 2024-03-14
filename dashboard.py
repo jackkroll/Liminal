@@ -377,6 +377,9 @@ def changeCamMemory():
             changedPrinter = request.form.get("printer")
             newIndex = request.form.get("index")
             jsonValues = json.load(f)
+            for item in jsonValues:
+                if item["cameraIndex"] == newIndex:
+                    jsonValues[item]["cameraIndex"] = None
             jsonValues[changedPrinter]["cameraIndex"] = newIndex
             for camera in liminal.cameras:
                 if camera.index == newIndex:
