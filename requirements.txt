@@ -5,3 +5,4 @@ requests~=2.30.0
 octorest~=0.4
 netifaces~=0.11.0
 opencv-python~=4.9.0.80
+Flask-HTTPAuth~=4.8.0
