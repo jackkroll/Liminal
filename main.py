@@ -70,6 +70,7 @@ class IndividualPrint():
 
 class Mk4Printer():
     def __init__(self, nickname, ipAddress, apiKey, prefix):
+        self.type = "MK4"
         self.nozzleTemp = None
         self.bedTemp = None
         self.state = None
@@ -136,6 +137,9 @@ class Mk4Printer():
         self.refreshData()
         headers = {"X-API-KEY": self.key}
         response = requests.put(f"http://{self.ip}/api/v1/job/{self.currentPrintID}/resume", headers=headers)
+    def state(self):
+        self.refreshData()
+        return self.state
 
 
 class SinglePrinter():
@@ -143,6 +147,7 @@ class SinglePrinter():
     This creates a basic printer class with additional information
     """
     def __init__(self, nickname, url, key, code):
+        self.type = "MK3"
         self.nickname = nickname
         self.code = code
         self.url = url
@@ -315,23 +320,26 @@ class Camera():
                 yield ("None")
 
     def timelapseLogger(self):
-        if self.printer != None and len(self.buffer)>0:
-            if "printing" in self.printer.printer.state.lower() and self.printer.fetchNozzleTemp()["actual"] >= 200:
-                self.timelapse.append(self.buffer[-1])
-                time.sleep(60)
-            elif len(self.timelapse) >= 0:
-                resolution = cv2.imdecode(np.frombuffer(self.buffer[-1], np.uint8), cv2.IMREAD_COLOR).shape
-                result = cv2.VideoWriter(f"{cwd}/Clip.mp4", cv2.VideoWriter_fourcc(*'mp4v'), self.frameRate,
-                                         (resolution[1], resolution[0]))
-                for frame in self.buffer:
-                    result.write(cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR))
-                result.release()
+        while True:
+            if self.printer != None and len(self.buffer)>0:
+                if ((self.printer.type == "MK3" and "printing" in self.printer.printer.state().lower()) or (self.printer.type == "MK4" and "printing" in self.printer.state().lower())) and ((self.printer.type == "MK3" and self.printer.fetchNozzleTemp()["actual"] >= 200) or (self.printer.type == "MK4" and self.printer.fetchNozzleTemp() >= 200)):
+                    self.timelapse.append(self.buffer[-1])
+                    time.sleep(60)
+                elif len(self.timelapse) > 0:
+                    resolution = cv2.imdecode(np.frombuffer(self.buffer[-1], np.uint8), cv2.IMREAD_COLOR).shape
+                    result = cv2.VideoWriter(f"{cwd}/Clip.mp4", cv2.VideoWriter_fourcc(*'mp4v'), 10,
+                                             (resolution[1], resolution[0]))
+                    for frame in self.timelapse:
+                        result.write(cv2.imdecode(np.frombuffer(frame, np.uint8), cv2.IMREAD_COLOR))
+                    result.release()
 
-                self.timelapse = []
-        elif len(self.buffer) == 0:
-            time.sleep(10)
-        else:
-            time.sleep(300)
+                    self.timelapse = []
+                else:
+                    time.sleep(120)
+            elif len(self.buffer) == 0:
+                time.sleep(10)
+            else:
+                time.sleep(300)
     def backgroundLogger(self):
         retrys = 0
         while True:

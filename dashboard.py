@@ -61,14 +61,14 @@ def index():
             <input type = "submit" value = "Preheat"> 
             </form>
             '''
-            if "paused" in printer.updateState():
+            if "paused" in printer.printer.state().lower():
                 body += f'''
                             <form action = "{url_for("resumePrint")}" method = post>
                             <input type="hidden" name="printer" value="{printer.nickname}">
                             <input type = "submit" value = "Resume Print"> 
                             </form>
                             '''
-            elif "printing" in printer.updateState():
+            elif "printing" in printer.printer.state().lower():
                 body += f'''
                             <form action = "{url_for("pausePrint")}" method = post>
                             <input type="hidden" name="printer" value="{printer.nickname}">
