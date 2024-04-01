@@ -70,6 +70,8 @@ def index():
       <a href="dev">Developer Portal</a>
       <a href="db">Database</a>
       <a href="2FA">Regen 2FA Code</a>
+      <a href="cctv">Cameras</a>
+      <a href="timelapse">Download last timelapse</a>
     </div>
         """
     for printer in liminal.printers:
@@ -530,6 +532,11 @@ def setPrinterStatus():
                     }
                     </style>
                     """
+        body += """
+                <div class="topnav">
+              <a href="ip">Edit IP Addresses</a>
+            </div>
+                """
         body += '<h1 style="color:coral"> Currently Online </h1>'
         for printer in liminal.printers:
             if printer.code not in jsonValues["printersDown"]:
@@ -570,6 +577,12 @@ def setPrinterStatus():
             """
         body += f'<a href="{url_for("clean")}">Clear all displays</a>'
         return body
+@app.route('/timelapse')
+def timelapse():
+    try:
+        return send_file(f"Clip.mp4")
+    except:
+        return "Error downloading last timelapse..."
 @app.errorhandler(500)
 def fallback(error):
     body = ""
