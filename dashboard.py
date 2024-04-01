@@ -64,18 +64,34 @@ def index():
     }
     </style>
     """
+    body += """
+        <div class="topnav">
+      <a class="active" href="">Home</a>
+      <a href="dev">Developer Portal</a>
+      <a href="db">Database</a>
+      <a href="2FA">Regen 2FA Code</a>
+    </div>
+        """
     for printer in liminal.printers:
         if printer.state == "offline" or printer.state == "closedOrError":
             liminal.printers.remove(printer)
             continue
         if printer.printer != None and printer.code not in jsonValues["printersDown"]:
             body += f'<h1 style="color:coral;"> <a href = {printer.url}>{printer.nickname}</a></h1>'
-            body += f'''
-            <form action = "{url_for("functions")}" method = post>
-            <input type="hidden" name="printer" value="{printer.nickname}">
-            <input type = "submit" value = "Preheat"> 
-            </form>
-            '''
+            if printer.fetchNozzleTemp()["actual"] < 200:
+                body += f'''
+                <form action = "{url_for("functions")}" method = post>
+                <input type="hidden" name="printer" value="{printer.nickname}">
+                <input type = "submit" value = "Preheat"> 
+                </form>
+                '''
+            else:
+                body += f'''
+                <form action = "{url_for("cooldown")}" method = post>
+                <input type="hidden" name="printer" value="{printer.nickname}">
+                <input type = "submit" value = "Cooldown"> 
+                </form>
+                '''
             if "paused" in printer.printer.state().lower():
                 body += f'''
                             <form action = "{url_for("resumePrint")}" method = post>
@@ -178,6 +194,14 @@ def functions():
                 if request.form.get("printer") == printer.nickname:
                     printer.preheat()
             return redirect(url_for("index"))
+
+@app.route('/cooldown', methods = ["POST"])
+def cooldown():
+    for printer in liminal.printers:
+        if request.form.get("printer") == printer.nickname:
+            printer.cooldown()
+            return True
+
 @app.route('/pause', methods = ["POST"])
 @auth.login_required()
 def pausePrint():
