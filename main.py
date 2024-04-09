@@ -393,7 +393,7 @@ class Liminal():
         for item in self.config:
             if "ipAddress" in self.config[item]:
                 tempPrinter = SinglePrinter(item, self.config[item]["ipAddress"], self.config[item]["apiKey"], self.config[item]["prefix"])
-                if tempPrinter.state == "offline" or tempPrinter.state == "closedOrError":
+                if tempPrinter.state == "offline" or tempPrinter.state == "closedOrError" or tempPrinter.state.lower() == "error" or tempPrinter.state.lower() == "detecting serial connection":
                     print("[ERROR] Printer is offline and cannot be added to LMNL")
                 else:
                     print("[OPERATIONAL] Mk3 Printer has been successfully added")

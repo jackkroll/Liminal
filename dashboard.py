@@ -16,18 +16,19 @@ liminal = Liminal()
 auth = HTTPBasicAuth()
 
 users = {
-    "Jack": generate_password_hash("rat"),
-    "Luke": generate_password_hash("rat"),
-    "Katia": generate_password_hash("rat"),
-    "Greysen": generate_password_hash("rat"),
-    "Spencer": generate_password_hash("rat"),
-    "Chris": generate_password_hash("rat"),
-    "Dylan": generate_password_hash("rat"),
-    "Mason": generate_password_hash("rat")
+    "jack": generate_password_hash("rat"),
+    "luke": generate_password_hash("rat"),
+    "katia": generate_password_hash("rat"),
+    "greysen": generate_password_hash("rat"),
+    "spencer": generate_password_hash("rat"),
+    "chris": generate_password_hash("rat"),
+    "dylan": generate_password_hash("rat"),
+    "mason": generate_password_hash("rat")
 
 }
 @auth.verify_password
 def verify_password(username, password):
+    username = username.lower()
     if username in users and \
             check_password_hash(users.get(username), password):
         return username
