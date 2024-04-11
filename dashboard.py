@@ -34,13 +34,16 @@ def verify_password(username, password):
         return username
 
 
-
-bucket = storage.bucket()
-db = firestore.client()
-prints_ref = db.collection('prints')
+try:
+    bucket = storage.bucket()
+    db = firestore.client()
+    prints_ref = db.collection('prints')
+    firebase = True
+except Exception:
+    firebase = False
 
 if sys.platform == "win32":
-    cwd = "C:/Users/jackk/Desktop/Liminal"
+    cwd = "C:/Users/jackk/PycharmProjects/Liminal"
 else:
     cwd = "/home/jack/Documents/Liminal-master"
 #CWD, current working directory, is the directory that the file is in
@@ -69,15 +72,20 @@ def index():
         <div class="topnav">
       <a class="active" href="">Home</a>
       <a href="dev">Developer Portal</a>
-      <a href="db">Database</a>
-      <a href="2FA">Regen 2FA Code</a>
-      <a href="cctv">Cameras</a>
-      <a href="timelapse">Download last timelapse</a>
+      <a href="db">Database</a>"""
+    if len(liminal.cameras) > 0:
+        body += """<a href="cctv">Cameras</a>"""
+    body +="""
+    <a href="timelapse">Download last timelapse</a>
     </div>
         """
     for printer in liminal.printers:
-        if printer.state == "offline" or printer.state == "closedOrError":
-            liminal.printers.remove(printer)
+        req = requests.get(f"{printer.url}/api/printer", headers={f"X-API-KEY": f"{printer.key}"})
+        if not req.ok:
+            print("[ERROR] Printer is not operational as reported by Octoprint")
+            continue
+        if not printer.printer.printer()["state"]["flags"]["operational"]:
+            print("[ERROR] Printer is not operational as reported by Octoprint")
             continue
         if printer.printer != None and printer.code not in jsonValues["printersDown"]:
             body += f'<h1 style="color:coral;"> <a href = {printer.url}>{printer.nickname}</a></h1>'
@@ -587,7 +595,7 @@ def timelapse():
 @app.errorhandler(500)
 def fallback(error):
     body = ""
-    body += f'<h1> There was an error somewhere, he is a fallback to printer URLS: <\h1>'
+    body += f'<h1> There was an error somewhere, he is a fallback to printer URLS: </h1>'
     for printer in liminal.printers:
         try:
             body += f'<h1 style="color:coral;"><a href = http://{printer.url}>{printer.nickname}</a> </h1>'
@@ -643,7 +651,7 @@ def mk4LoadingScreen(printerNickname):
                 <meta http-equiv="refresh" content="1" /> 
                 Mk4 Transfer status:<br>{printer.transfer}% Complete"""
             else:
-                return "<h1>Transfer status Complete?<\h1>"
+                return "<h1>Transfer status Complete?</h1>"
 
 if __name__ == '__main__':
     threads = []
@@ -657,4 +665,4 @@ if __name__ == '__main__':
 
     for thread in threads:
         thread.start()
-    app.run("0.0.0.0", 8000, True)
+    app.run("0.0.0.0", 8000, False)

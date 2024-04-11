@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 
 if sys.platform == "win32":
-    cwd = "C:/Users/jackk/Desktop/Liminal"
+    cwd = "C:/Users/jackk/PycharmProjects/Liminal"
 else:
     cwd = "/home/jack/Documents/Liminal-master"
 try:
@@ -393,9 +393,10 @@ class Liminal():
         for item in self.config:
             if "ipAddress" in self.config[item]:
                 tempPrinter = SinglePrinter(item, self.config[item]["ipAddress"], self.config[item]["apiKey"], self.config[item]["prefix"])
-                if tempPrinter.state == "offline" or tempPrinter.state == "closedOrError" or tempPrinter.state.lower() == "error" or tempPrinter.state.lower() == "detecting serial connection":
-                    print("[ERROR] Printer is offline and cannot be added to LMNL")
-                else:
+                req = requests.get(f"{tempPrinter.url}/api/printer", headers={f"X-API-KEY": f"{tempPrinter.key}"})
+                if not req.ok:
+                    print("[ERROR] Printer is not operational as reported by Octoprint")
+                if tempPrinter.printer.printer()["state"]["flags"]["operational"]:
                     print("[OPERATIONAL] Mk3 Printer has been successfully added")
                     self.printers.append(tempPrinter)
                     for camera in self.cameras:
@@ -405,6 +406,10 @@ class Liminal():
                                 print("Camera Matched with Printer")
                         except:
                             print("[NOTICE] Camera config not added for printer")
+                else:
+                    print("[ERROR] Printer is offline and cannot be added to LMNL")
+                    print(f"[DEBUG] {tempPrinter.printer.printer()["state"]["flags"]}")
+
 
         for item in self.config:
             if "Mk4IPAddress" in self.config[item]:
