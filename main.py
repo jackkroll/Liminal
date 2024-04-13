@@ -408,7 +408,7 @@ class Liminal():
                             print("[NOTICE] Camera config not added for printer")
                 else:
                     print("[ERROR] Printer is offline and cannot be added to LMNL")
-                    print(f"[DEBUG] {tempPrinter.printer.printer()["state"]["flags"]}")
+                    print(f'[DEBUG] {tempPrinter.printer.printer()["state"]["flags"]}')
 
 
         for item in self.config:

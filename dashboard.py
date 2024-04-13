@@ -595,7 +595,7 @@ def timelapse():
 @app.errorhandler(500)
 def fallback(error):
     body = ""
-    body += f'<h1> There was an error somewhere, he is a fallback to printer URLS: </h1>'
+    body += f'<h1> There was an error somewhere, here is a fallback to printer URLS: </h1>'
     for printer in liminal.printers:
         try:
             body += f'<h1 style="color:coral;"><a href = http://{printer.url}>{printer.nickname}</a> </h1>'
