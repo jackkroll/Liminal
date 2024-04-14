@@ -72,7 +72,6 @@ def index():
         <div class="topnav">
       <a class="active" href="">Home</a>
       <a href="dev">Developer Portal</a>
-      <a href="ip">IPs</a>
       <a href="db">Database</a>"""
     if len(liminal.cameras) > 0:
         body += """<a href="cctv">Cameras</a>"""
