@@ -12,7 +12,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 liminal = Liminal()
 
-#autoUpdateTest
+#autoUpdateTest2
 auth = HTTPBasicAuth()
 
 users = {
