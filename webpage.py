@@ -8,14 +8,14 @@ app = Flask(__name__)
 thing = 5
 @app.route("/", methods=["GET"])
 def home():
-    print(requests.get(url_for("coinflip")))
-    thing = 7
+    #print(requests.get(url_for("coinflip")))
+    thing = 3
     if thing <= 5:
         return """
     <meta http-equiv="refresh" content="1" /> 
     Hello World!<br>The current time is {}.""".format(datetime.strftime(datetime.now(), "%d %B %Y %X"))
     else:
-        return "<h1>YIPPEEEE<\h1>"
+        return "<h1>YIPPEEEE</h1>"
 @app.route("/flip")
 def coinflip():
     return random.choice(["heads", "tails"])

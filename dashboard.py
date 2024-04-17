@@ -267,7 +267,11 @@ def uploadPrintURL():
                     user = request.form.get("creator")
                     material = request.form.get("material")
                     printerCode = request.form.get("printercode")
-                    nickname = request.form.get("nickname")
+                    rawNickname = request.form.get("nickname")
+                    nickname = ""
+                    for char in rawNickname:
+                        if char.isalnum():
+                            nickname.join(char)
                     print("[OPERATIONAL] Form data successfully gathered")
                 except Exception as e:
                     print("[ERROR] Failed to gather form data")
@@ -639,7 +643,7 @@ def cctvView():
                 </a>
         """
     return body
-@app.route('/mk4Load/<path:printerNickname>')
+@app.route('/mk4Load/<printerNickname>')
 @auth.login_required()
 def mk4LoadingScreen(printerNickname):
     for printer in liminal.MK4Printers:
