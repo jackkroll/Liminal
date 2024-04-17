@@ -1,23 +1,18 @@
 from flask import Flask, request, send_file
+import serial
 app = Flask(__name__)
+#git clone https://github.com/libre-computer-project/libretech-wiring-tool.git
+#cd libretech-wiring-tool
+#sudo make
 
-@app.route("/listener", methods = ["POST"])
-def apiListener():
-    newEvent = (list(request.form.keys())[0])
-    printer = request.headers["Printer"]
-    print(newEvent)
-    match newEvent:
-        case "serverStartup":
-            print(f"Server has started up on {printer}")
-        case "printStarted":
-            print(f"Print has started on  {printer}")
-        case "printFailed":
-            print(f"Print has failed on {printer}")
-        case "printDone":
-            print(f"Print has finished on {printer}")
-        case "printCancelled":
-            print(f"Print has been cancelled on {printer}")
-    return "ack"
 
-if __name__ == '__main__':
-    app.run(debug=True, host="0.0.0.0", port= 8000)
+#M486 - M486: Cancel Object
+
+prusaBaudrate = 115200
+#octoprint serial port = '/dev/ttyAML6'
+mk4Printer = serial.Serial('/dev/ttyAML6', baudrate=115200, timeout=5)
+mk4Printer.open()
+mk4Printer.write("G28".encode())
+response = mk4Printer.readline()
+print(response.decode())
+mk4Printer.close()
