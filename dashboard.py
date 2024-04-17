@@ -524,6 +524,13 @@ def ipManagement():
     """
     return body
 
+@app.route('/dev/mk4Update/<printer>/<type>', methods = ["POST"])
+@auth.login_required()
+def updatePrinter(printer, type):
+    for Mk4printer in liminal.MK4Printers:
+        if Mk4printer.nickname == printer:
+            Mk4printer.pushUpdate(type)
+    return url_for("setPrinterStatus")
 @app.route('/dev',methods = ["GET"])
 @auth.login_required()
 def setPrinterStatus():
@@ -567,7 +574,6 @@ def setPrinterStatus():
                 body += f"""
                     <form style="color:white" action="{url_for('setPrinterOnline')}" method="post" enctype="multipart/form-data">
                     <input type="hidden" name="printer" value="{printer.code}">
-                    <input type="hidden" name="printer" value="{printer.code}">
                     <button type="submit">Switch Online</button>
                     </form>
                                 """
@@ -589,6 +595,37 @@ def setPrinterStatus():
             </form>
             """
         body += f'<a href="{url_for("clean")}">Clear all displays</a>'
+
+        if liminal.MK4Printers > 0:
+            body += '<h1 style="color:coral"> Mk Printers </h1>'
+            for Mk4Printer in liminal.MK4Printers:
+                body += f'<h2> {Mk4Printer.nickname} </h2>'
+                prusalinkUpdate, systemUpdate = Mk4Printer.checkUpdate()
+                if not prusalinkUpdate:
+                    body += '<button disabled> PrusaLink is up to date </button>'
+                elif prusalinkUpdate:
+                    body += f"""
+                    <form style="color:white" action="{url_for('updatePrinter')}" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="type" value="prusalink">
+                    <button type="submit">Update Prusalink</button>
+                    </form>
+                    """
+                else:
+                    body += '<button disabled> Unable to get Prusalink version status </button>'
+
+                if not systemUpdate:
+                    body += '<button disabled> System is up to date </button>'
+                elif systemUpdate:
+                    body += f"""
+                    <form style="color:white" action="{url_for('updatePrinter')}" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="type" value="prusalink">
+                    <button type="submit">Update Prusalink</button>
+                    </form>
+                    """
+                else:
+                    body += '<button disabled> Unable to get system version status </button>'
+
+
         return body
 @app.route('/timelapse')
 def timelapse():

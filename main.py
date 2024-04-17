@@ -100,6 +100,30 @@ class Mk4Printer():
         else:
             self.transfer = None
         print(response.json())
+    def checkUpdate(self):
+        headers = {"X-API-KEY": self.key}
+        returnDict = []
+        response = requests.get(f"http://{self.ip}/api/v1/update/prusalink", headers=headers)
+        print(f"[DEBUG] Mk4 PrusaLink update request responded: {response.content} with code {response.status_code}")
+        if response.status_code == 200:
+            returnDict.append(response.content)
+        else:
+            returnDict.append(None)
+        response = requests.get(f"http://{self.ip}/api/v1/update/system", headers=headers)
+        print(f"[DEBUG] Mk4 system update request responded: {response.content} with code {response.status_code}")
+        if response.status_code == 200:
+            returnDict.append(response.content)
+        else:
+            returnDict.append(None)
+        return returnDict
+
+    def pushUpdate(self, type):
+        headers = {"X-API-KEY": self.key}
+        if type not in ["system", "prusalink"]:
+            return False
+        response = requests.post(f"http://{self.ip}/api/v1/update/{type}", headers=headers)
+        return response
+
 
     def fetchNozzleTemp(self):
         self.refreshData()
