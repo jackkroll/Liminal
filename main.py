@@ -1,4 +1,4 @@
-import time, asyncio, os, pytimeparse, datetime, requests, random, math,json, socket, sys, cv2
+import time, asyncio, os, pytimeparse, datetime, requests, random, math,json, socket, sys, cv2, serial
 from datetime import datetime, timedelta
 from octorest import OctoRest
 from firebase_admin import credentials, initialize_app, storage, firestore
@@ -69,7 +69,7 @@ class IndividualPrint():
 
 
 class Mk4Printer():
-    def __init__(self, nickname, ipAddress, apiKey, prefix):
+    def __init__(self, nickname, ipAddress, apiKey, prefix, portStr = None):
         self.type = "MK4"
         self.nozzleTemp = None
         self.bedTemp = None
@@ -77,10 +77,49 @@ class Mk4Printer():
         self.currentPrintID = None
         self.progress = None
         self.ip = ipAddress
+        self.portStr = portStr
         self.key = apiKey
         self.prefix = prefix
         self.nickname = nickname
         self.transfer = None
+        if self.portStr != None:
+            try:
+                self.serial = serial.Serial(self.portStr, baudrate=115200, timeout=5)
+                try:
+                    self.serial.open()
+                except Exception:
+                    print(f"[NOTICE] Serial port could not be opened, possibly already open")
+                time.sleep(10)
+                print(f"[SERIAL STARTUP ON {self.nickname.upper()}]\n{self.serial.read(256).decode()}")
+            except Exception:
+                self.serial = None
+                print(f"[ERROR] Serial could not be configured for {self.nickname} on port {self.portStr}")
+        else:
+            print(f"[NOTICE] Serial could not be configured on {self.nickname} due to no port being assigned")
+
+    def cmd(self, command):
+        self.serial.write(f"{command}\r\n".encode())
+        print(f"[SERIAL DEBUG]{self.serial.readline().decode()}")
+    def preheatNozzle(self, type = "both"):
+        if type != "bed":
+            #Nozzle Temperature
+            self.cmd("M104 S215")
+        if type != "nozzle":
+            #Bed Temperature
+            self.cmd("M140 S60")
+
+    def cooldown(self, type = "both"):
+        if type != "bed":
+            self.cmd("M104 S0")
+        if type != "nozzle":
+            self.cmd("M140 S0")
+    def returnHome(self):
+        self.cmd("G28 W")
+    def abort(self):
+        if serial != None:
+            self.cmd("M112")
+        else:
+            self.stop()
 
     def refreshData(self):
         headers = {"X-API-KEY": self.key}
@@ -147,7 +186,7 @@ class Mk4Printer():
     def transferStatus(self):
         self.refreshData()
         return self.transfer
-    def abort(self):
+    def stop(self):
         self.refreshData()
         headers = {"X-API-KEY": self.key}
         response = requests.delete(f"http://{self.ip}/api/v1/job/{self.currentPrintID}", headers=headers)

@@ -71,6 +71,7 @@ def index():
     body += """
         <div class="topnav">
       <a class="active" href="">Home</a>
+      <a href="estop">E-STOP ALL PRINTERS</a>
       <a href="dev">Developer Portal</a>
       <a href="db">Database</a>"""
     if len(liminal.cameras) > 0:
@@ -462,11 +463,11 @@ def setPrinterOffline():
             json.dump(jsonValues, f, indent=4)
         return redirect(url_for("setPrinterStatus"))
 
-@app.route('/emergency/stop', methods = ["POST"])
+@app.route('/estop', methods = ["POST"])
 @auth.login_required()
 def emergencyStopWeb():
     liminal.estop()
-    return "Printers Stopping"
+    return "All printers stopping"
 @app.route('/2FA')
 @auth.login_required()
 def TwoFA():

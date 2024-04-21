@@ -23,7 +23,8 @@ for port in ports:
 class SerialPrinter():
     def __init__(self, portName):
         self.port = portName
-        self.serial = serial.Serial(self.port.name, baudrate=115200, timeout=5)
+        self.serial = serial.Serial("/dev/ttyAML6", baudrate=115200, timeout=5)
+        self.currentPrintObjects = []
         try:
             self.serial.open()
         except Exception:
@@ -49,9 +50,10 @@ class SerialPrinter():
             self.cmd("M104 S0")
         if type != "nozzle":
             self.cmd("M140 S0")
-
     def returnHome(self):
         self.cmd("G28 W")
+    def abort(self):
+        self.cmd("M112")
 
 
 
