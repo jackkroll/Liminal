@@ -1,6 +1,6 @@
 from flask import Flask, request, send_file
 import serial
-import time
+import time, os
 import serial.tools.list_ports
 app = Flask(__name__)
 #git clone https://github.com/libre-computer-project/libretech-wiring-tool.git
@@ -23,7 +23,7 @@ for port in ports:
 class SerialPrinter():
     def __init__(self, portName):
         self.port = portName
-        self.serial = serial.Serial("/dev/ttyAML6", baudrate=115200, timeout=5)
+        self.serial = serial.Serial(self.port.name, baudrate=115200, timeout=5)
         self.currentPrintObjects = []
         try:
             self.serial.open()
@@ -55,7 +55,4 @@ class SerialPrinter():
     def abort(self):
         self.cmd("M112")
 
-
-
 printer = SerialPrinter(mk4PortStr)
-printer.cooldown()
