@@ -300,7 +300,10 @@ class SinglePrinter():
         self.user = print.creator
 
     def abort(self):
-        self.printer.cancel()
+        try:
+            self.printer.cancel()
+        except RuntimeError:
+            print("[WARNING] Octoprint couldn't cancel, likely nothing running")
         #Used for implementing LED Methods + Sending notifications
     def fetchNozzleTemp(self):
         return self.printer.tool(history = True, limit = 1)["tool0"]
@@ -443,6 +446,7 @@ class Liminal():
         self.MK4Printers = []
         self.accounts = list(self.config["students"].keys())
         self.cameras = []
+        self.systemColor = "DodgerBlue"
         initalized = -1
         for i in range (10):
             initalized+=1

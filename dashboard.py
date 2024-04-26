@@ -59,27 +59,32 @@ def index():
     file =open((f"{cwd}/ref/config.json"))
     config = json.load(file)
     file.close()
-    body = "<html><body style = background-color:black>"
-    body += """
+    body = "<html><body style = background-color:#1f1f1f>"
+    body += f'''
     <head>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter">
     </head>
     <style>
-    body {
+    body {{
   font-family: "Inter", sans-serif;
-    }
+    }}
+    .button{{
+    background-color:{liminal.systemColor};
+    color:white;
+    padding:10px;
+    border-radius:15px;
+    }}
     </style>
-    """
+    '''
     body += """
-        <div class="topnav">
-      <a class="active" href="">Home</a>
-      <a href="estop">E-STOP ALL PRINTERS</a>
-      <a href="dev">Developer Portal</a>
-      <a href="db">Database</a>"""
+    <div style="padding:10px;">
+      <a href="estop" class="button">E-STOP ALL PRINTERS</a>
+      <a href="dev" class="button">Developer Portal</a>
+      <a href="db" class="button">Database</a>"""
     if len(liminal.cameras) > 0:
-        body += """<a href="cctv">Cameras</a>"""
+        body += """<a href="cctv" class="button">Cameras</a>"""
     body +="""
-    <a href="timelapse">Download last timelapse</a>
+    <a href="timelapse" class="button">Download last timelapse</a>
     </div>
         """
     for printer in liminal.printers:
@@ -92,42 +97,46 @@ def index():
             continue
         if printer.printer != None and printer.code not in jsonValues["printersDown"]:
             addedPrinters += 1
-            body += f'<h1 style="color:coral;"> <a href = {printer.url}>{printer.nickname}</a></h1>'
+            body += '<div style="display:flex;">'
+            body += f'<h1 style="margin-top:5px; margin-bottom:0px"> <a href = {printer.url}; style="color:{liminal.systemColor};">{printer.nickname}</a></h1>'
             if printer.fetchNozzleTemp()["actual"] < 200:
                 body += f'''
-                <form action = "{url_for("functions")}" method = post>
+                <form style="align-self:flex-end;padding:5px;margin:0px" action = "{url_for("functions")}" method = post>
                 <input type="hidden" name="printer" value="{printer.nickname}">
                 <input type = "submit" value = "Preheat"> 
                 </form>
                 '''
             else:
                 body += f'''
-                <form action = "{url_for("cooldown")}" method = post>
+                <form style="align-self:flex-end;padding:5px;margin:0px" action = "{url_for("cooldown")}" method = post>
                 <input type="hidden" name="printer" value="{printer.nickname}">
                 <input type = "submit" value = "Cooldown"> 
                 </form>
                 '''
             if "paused" in printer.printer.state().lower():
                 body += f'''
-                            <form action = "{url_for("resumePrint")}" method = post>
+                            <form style="align-self:flex-end;padding:10px" action = "{url_for("resumePrint")}" method = post>
                             <input type="hidden" name="printer" value="{printer.nickname}">
                             <input type = "submit" value = "Resume Print"> 
                             </form>
                             '''
             elif "printing" in printer.printer.state().lower():
                 body += f'''
-                            <form action = "{url_for("pausePrint")}" method = post>
+                            <form style="align-self:flex-end;padding:10px" action = "{url_for("pausePrint")}" method = post>
                             <input type="hidden" name="printer" value="{printer.nickname}">
                             <input type = "submit" value = "Pause Print"> 
                             </form>
                 '''
+            body += '</div>'
             for camera in liminal.cameras:
                 if camera.printer != None and camera.printer.nickname == printer.nickname:
                     body += f"""<img src="{url_for("video_feed", cameraNum = camera.cameraNumber)}" alt="Video Stream">"""
+            body += '<div style="display:flex;">'
             if printer.fetchNozzleTemp() != None:
-                body += f'<h3 style="color:white;">Nozzle: {printer.fetchNozzleTemp()["actual"]}</h3>'
+                body += f'<h3 style="color:white;margin-right: 10px">Nozzle: {printer.fetchNozzleTemp()["actual"]}</h3>'
             if printer.fetchBedTemp() != None:
-                body += f'<h3 style="color:white;">Bed: {printer.fetchBedTemp()["actual"]}</h3>'
+                body += f'<h3 style="color:white;margin-right: 10px">Bed: {printer.fetchBedTemp()["actual"]}</h3>'
+            body += '</div>'
             if "printing" in printer.state.lower() and printer.fetchNozzleTemp()["actual"] >= 200:
                 body += f'<h3 style="color:white;">Currently in use | {int(printer.fetchTimeRemaining()/60)} Minutes left</h3>'
                 #Implement time remaining methods :)
@@ -165,7 +174,7 @@ def index():
                     liminal.printers.remove(printer)
                 print(f"[ERROR] Error refreshing data when displaying dashboard for {printer.nickname}")
             else:
-                body += f'<h1 style="color:coral;"><a href = http://{printer.ip}>{printer.nickname}</a> </h1>'
+                body += f'<h1 style="color:{liminal.systemColor};"><a href = http://{printer.ip}>{printer.nickname}</a> </h1>'
                 for camera in liminal.cameras:
                     if camera.printer != None and camera.printer.nickname == printer.nickname:
                         body += f"""<img src="{url_for("video_feed", cameraNum=camera.cameraNumber)}" alt="Video Stream">"""
@@ -506,7 +515,7 @@ def ipManagement():
     """
     for item in jsonValues:
         if "ipAddress" in jsonValues[item]:
-            body += f'<h1 style="color:coral"> {item} </h1>'
+            body += f'<h1 style="color:{liminal.systemColor}"> {item} </h1>'
             try:
                 req = requests.get(f"{jsonValues[item]["ipAddress"]}/api/printer", headers={f"X-API-KEY": f"{jsonValues[item]["apiKey"]}"})
                 body += '<h3 style="color:green"> Printer is reachable via HTTP</h3>'
@@ -530,7 +539,7 @@ def ipManagement():
             </form>
             """
         if "Mk4IPAddress" in jsonValues[item]:
-            body += f'<h1 style="color:coral"> {item} </h1>'
+            body += f'<h1 style="color:{liminal.systemColor}"> {item} </h1>'
             body += f"""
             <form style="color:white" action="{url_for('changeIPAddrMK4')}" method="post", enctype="multipart/form-data">
             <input type="hidden" name="printer" value="{item}">
@@ -577,7 +586,7 @@ def setPrinterStatus():
               <a href="ip">Edit IP Addresses</a>
             </div>
                 """
-        body += '<h1 style="color:coral"> Currently Online </h1>'
+        body += f'<h1 style="color:{liminal.systemColor}"> Currently Online </h1>'
         for printer in liminal.printers:
             if printer.code not in jsonValues["printersDown"]:
                 body += f'<h3 style="color:white"> {printer.nickname} </h3>'
@@ -587,7 +596,7 @@ def setPrinterStatus():
                         <button type="submit">Switch Offline</button>
                         </form>
                         """
-        body += '<h1 style="color:coral"> Currently Offline </h1>'
+        body += f'<h1 style="color:{liminal.systemColor}"> Currently Offline </h1>'
         for printer in liminal.printers:
             if printer.code in jsonValues["printersDown"]:
                 body += f'<h3 style="color:white"> {printer.nickname} </h3>'
@@ -598,7 +607,7 @@ def setPrinterStatus():
                     </form>
                                 """
 
-        body += '<h1 style="color:coral"> Change Printer Camera </h1>'
+        body += f'<h1 style="color:{liminal.systemColor}"> Change Printer Camera </h1>'
         for camera in liminal.cameras:
             body += f"""<img src="{url_for("video_feed", cameraNum=camera.cameraNumber)}" alt="Video Stream">"""
             body += f"""
@@ -617,7 +626,7 @@ def setPrinterStatus():
         body += f'<a href="{url_for("clean")}">Clear all displays</a>'
 
         if len(liminal.MK4Printers) > 0:
-            body += '<h1 style="color:coral"> Mk Printers </h1>'
+            body += f'<h1 style="{liminal.systemColor}"> Mk Printers </h1>'
             for Mk4Printer in liminal.MK4Printers:
                 body += f'<h2> {Mk4Printer.nickname} </h2>'
                 prusalinkUpdate, systemUpdate = Mk4Printer.checkUpdate()
@@ -659,12 +668,12 @@ def fallback(error):
     body += f'<h1> There was an error somewhere, here is a fallback to printer URLS: </h1>'
     for printer in liminal.printers:
         try:
-            body += f'<h1 style="color:coral;"><a href = http://{printer.url}>{printer.nickname}</a> </h1>'
+            body += f'<h1 style="color:{liminal.systemColor};"><a href = http://{printer.url}>{printer.nickname}</a> </h1>'
         except Exception:
             print(f"[ERROR] Error adding printer to fallback")
     for printer in liminal.MK4Printers:
         try:
-            body += f'<h1 style="color:coral;"><a href = http://{printer.ip}>{printer.nickname}</a> </h1>'
+            body += f'<h1 style="color:{liminal.systemColor};"><a href = http://{printer.ip}>{printer.nickname}</a> </h1>'
         except Exception:
             print("[ERROR] Error adding printer to falback")
     return body
