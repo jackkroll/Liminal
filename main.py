@@ -456,9 +456,15 @@ class Liminal():
         for item in self.config:
             if "ipAddress" in self.config[item]:
                 tempPrinter = SinglePrinter(item, self.config[item]["ipAddress"], self.config[item]["apiKey"], self.config[item]["prefix"])
-                req = requests.get(f"{tempPrinter.url}/api/printer", headers={f"X-API-KEY": f"{tempPrinter.key}"})
+                try:
+                    req = requests.get(f"{tempPrinter.url}/api/printer", headers={f"X-API-KEY": f"{tempPrinter.key}"})
+                except Exception as e:
+                    print(e)
+                    print(f"[ERROR] IP address for {tempPrinter.nickname} ({tempPrinter.url}) cannot be reached)")
+                    continue
                 if not req.ok:
                     print("[ERROR] Printer is not operational as reported by Octoprint")
+                    continue
                 if tempPrinter.printer.printer()["state"]["flags"]["operational"]:
                     print("[OPERATIONAL] Mk3 Printer has been successfully added")
                     self.printers.append(tempPrinter)

@@ -54,6 +54,8 @@ def index():
     jsonValues = json.load(file)
     file.close()
 
+    addedPrinters = 0
+
     file =open((f"{cwd}/ref/config.json"))
     config = json.load(file)
     file.close()
@@ -89,6 +91,7 @@ def index():
             print("[ERROR] Printer is not operational as reported by Octoprint")
             continue
         if printer.printer != None and printer.code not in jsonValues["printersDown"]:
+            addedPrinters += 1
             body += f'<h1 style="color:coral;"> <a href = {printer.url}>{printer.nickname}</a></h1>'
             if printer.fetchNozzleTemp()["actual"] < 200:
                 body += f'''
@@ -184,7 +187,8 @@ def index():
                     <button type="submit">Upload</button>
                     </form>
                     """
-
+    if addedPrinters == 0:
+        body += f'<h3 style="color:white;">No printers available/online, consult dev menu for debugging</h3>'
     body += "</body></html>"
 
     return body
@@ -463,7 +467,7 @@ def setPrinterOffline():
             json.dump(jsonValues, f, indent=4)
         return redirect(url_for("setPrinterStatus"))
 
-@app.route('/estop', methods = ["POST"])
+@app.route('/estop', methods = ["GET"])
 @auth.login_required()
 def emergencyStopWeb():
     liminal.estop()
@@ -503,6 +507,21 @@ def ipManagement():
     for item in jsonValues:
         if "ipAddress" in jsonValues[item]:
             body += f'<h1 style="color:coral"> {item} </h1>'
+            try:
+                req = requests.get(f"{jsonValues[item]["ipAddress"]}/api/printer", headers={f"X-API-KEY": f"{jsonValues[item]["apiKey"]}"})
+                body += '<h3 style="color:green"> Printer is reachable via HTTP</h3>'
+                if not req.ok:
+                    body += '<h3 style="color:orange"> Printer is not operational on Octoprint </h3>'
+                else:
+                    if not req.json()["state"]["flags"]["operational"]:
+                        body += '<h3 style="color:orange"> Printer is not operational on Octoprint via flags</h3>'
+                    else:
+                        body += '<h3 style="color:green"> Printer is operational via Octoprint</h3>'
+            except Exception as e:
+                print(e)
+                body += '<h3 style="color:red"> Printer is not reachable via HTTP</h3>'
+
+
             body += f"""
             <form style="color:white" action="{url_for('changeIPAddr')}" method="post", enctype="multipart/form-data">
             <input type="hidden" name="printer" value="{item}">
@@ -521,7 +540,7 @@ def ipManagement():
             """
     
     body += """
-    '<h1 style="color:red"> WARNING: Changing these values may result in this software not recognizing printers, only do this if you know what you're doing </h1>'
+    <h1 style="color:red"> WARNING: Changing these values may result in this software not recognizing printers, only do this if you know what you're doing </h1>
     """
     return body
 
@@ -597,7 +616,7 @@ def setPrinterStatus():
             """
         body += f'<a href="{url_for("clean")}">Clear all displays</a>'
 
-        if liminal.MK4Printers > 0:
+        if len(liminal.MK4Printers) > 0:
             body += '<h1 style="color:coral"> Mk Printers </h1>'
             for Mk4Printer in liminal.MK4Printers:
                 body += f'<h2> {Mk4Printer.nickname} </h2>'
