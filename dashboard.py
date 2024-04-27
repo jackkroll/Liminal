@@ -73,16 +73,29 @@ def index():
     color:white;
     padding:10px;
     border-radius:15px;
+    text-decoration:none;
+    }}
+    .interactionButton{{
+    align-self:flex-end;
+    padding:10px;
+    margin:0px;
+    color:white;
+    border-radius:15px;
+    text-decoration:none;
+    }}
+    .printerTitle{{
+    margin-top:5px;
+    margin-bottom:0px;
     }}
     </style>
     '''
     body += """
-    <div style="padding:10px;">
-      <a href="estop" class="button">E-STOP ALL PRINTERS</a>
+    <div style="padding-top:10px; padding-bottom:20px">
+      <a href="estop" style="background-color:#c43349" class="button">E-STOP</a>
       <a href="dev" class="button">Developer Portal</a>
       <a href="db" class="button">Database</a>"""
     if len(liminal.cameras) > 0:
-        body += """<a href="cctv" class="button">Cameras</a>"""
+        body += """<a href="cctv" class="button" class="button">Cameras</a>"""
     body +="""
     <a href="timelapse" class="button">Download last timelapse</a>
     </div>
@@ -98,34 +111,34 @@ def index():
         if printer.printer != None and printer.code not in jsonValues["printersDown"]:
             addedPrinters += 1
             body += '<div style="display:flex;">'
-            body += f'<h1 style="margin-top:5px; margin-bottom:0px"> <a href = {printer.url}; style="color:{liminal.systemColor};">{printer.nickname}</a></h1>'
+            body += f'<h1 class="printerTitle"> <a href = {printer.url}; style="color:{liminal.systemColor};">{printer.nickname}</a></h1>'
             if printer.fetchNozzleTemp()["actual"] < 200:
                 body += f'''
-                <form style="align-self:flex-end;padding:5px;margin:0px" action = "{url_for("functions")}" method = post>
+                <form style="margin-top:5px; margin-left:10px;margin-bottom:0px;"action = "{url_for("functions")}" method = post>
                 <input type="hidden" name="printer" value="{printer.nickname}">
-                <input type = "submit" value = "Preheat"> 
+                <input class="interactionButton" style="background-color:tomato" type = "submit" value = "Preheat"> 
                 </form>
                 '''
             else:
                 body += f'''
-                <form style="align-self:flex-end;padding:5px;margin:0px" action = "{url_for("cooldown")}" method = post>
+                <form  action = "{url_for("cooldown")}" method = post>
                 <input type="hidden" name="printer" value="{printer.nickname}">
-                <input type = "submit" value = "Cooldown"> 
+                <input class="interactionButton" style="background-color:LightSkyBlue" type = "submit" value = "Cooldown"> 
                 </form>
                 '''
             if "paused" in printer.printer.state().lower():
                 body += f'''
-                            <form style="align-self:flex-end;padding:10px" action = "{url_for("resumePrint")}" method = post>
-                            <input type="hidden" name="printer" value="{printer.nickname}">
-                            <input type = "submit" value = "Resume Print"> 
-                            </form>
-                            '''
+                    <form  action = "{url_for("resumePrint")}" method = post>
+                    <input type="hidden" name="printer" value="{printer.nickname}">
+                    <input class="interactionButton" style="background-color:green" type = "submit" value = "Resume Print"> 
+                    </form>
+                    '''
             elif "printing" in printer.printer.state().lower():
                 body += f'''
-                            <form style="align-self:flex-end;padding:10px" action = "{url_for("pausePrint")}" method = post>
-                            <input type="hidden" name="printer" value="{printer.nickname}">
-                            <input type = "submit" value = "Pause Print"> 
-                            </form>
+                    <form action = "{url_for("pausePrint")}" method = post>
+                    <input type="hidden" name="printer" value="{printer.nickname}">
+                    <input class="interactionButton" style="background-color:orange" type = "submit" value = "Pause Print"> 
+                    </form>
                 '''
             body += '</div>'
             for camera in liminal.cameras:
