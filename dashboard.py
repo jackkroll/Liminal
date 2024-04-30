@@ -530,7 +530,7 @@ def ipManagement():
         if "ipAddress" in jsonValues[item]:
             body += f'<h1 style="color:{liminal.systemColor}"> {item} </h1>'
             try:
-                req = requests.get(f"{jsonValues[item]["ipAddress"]}/api/printer", headers={f"X-API-KEY": f"{jsonValues[item]["apiKey"]}"})
+                req = requests.get(f'{jsonValues[item]["ipAddress"]}/api/printer', headers={"X-API-KEY": f'{jsonValues[item]["apiKey"]}'})
                 body += '<h3 style="color:green"> Printer is reachable via HTTP</h3>'
                 if not req.ok:
                     body += '<h3 style="color:orange"> Printer is not operational on Octoprint </h3>'
