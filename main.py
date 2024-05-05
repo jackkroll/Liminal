@@ -34,7 +34,7 @@ def make_client(url, apikey):
         # Handle exception as you wish
         print(ex)
 class IndividualPrint():
-    def __init__(self, file, creator, material, printerCode, nickname):
+    def __init__(self, file, creator, material, printerCode, nickname, type = "gcode"):
         self.file = file
         self.creator = creator
         self.material = material
@@ -44,6 +44,7 @@ class IndividualPrint():
         #self.nozzle = gcodeData[0]
         self.printerCode = printerCode.upper()
         self.nickname = nickname
+        self.type = type
         #Add implementation to check UUID to ensure it isn't the 0.007% chance they're the same
         passed_check = False
         while not passed_check:
@@ -95,12 +96,13 @@ class Mk4Printer():
                 self.serial = None
                 print(f"[ERROR] Serial could not be configured for {self.nickname} on port {self.portStr}")
         else:
+            self.serial = None
             print(f"[NOTICE] Serial could not be configured on {self.nickname} due to no port being assigned")
 
     def cmd(self, command):
         self.serial.write(f"{command}\r\n".encode())
-        print(f"[SERIAL DEBUG]{self.serial.readline().decode()}")
-    def preheatNozzle(self, type = "both"):
+        print(f"[SERIAL RESPONSE]{self.serial.readline().decode()}")
+    def preheat(self, type = "both"):
         if type != "bed":
             #Nozzle Temperature
             self.cmd("M104 S215")
@@ -170,7 +172,7 @@ class Mk4Printer():
     def fetchBedTemp(self):
         self.refreshData()
         return self.bedTemp
-    def upload(self, fileTxt, nickname, bGcode = False):
+    def upload(self, fileTxt, nickname, bGcode = False, printRightAway = True):
         storage = "usb"
         if bGcode:
             path = f"{nickname}.bgcode"
@@ -178,11 +180,24 @@ class Mk4Printer():
             path = f"{nickname}.gcode"
         uploadLength = len(fileTxt)
         # ?0 = False, ?1 = True
-        headers = {"X-API-KEY": self.key, "Content-Length": str(uploadLength), "Print-After-Upload": "?1",
-                   "Overwrite": "?0", "Accept-Language": "en-US", "Accept": "application/json"}
+        if printRightAway:
+            printAfterUpload = "?1"
+        else:
+            printAfterUpload = "?2"
+        headers = {"X-API-KEY": self.key, "Content-Length": str(uploadLength), "Print-After-Upload": printAfterUpload,
+                   "Overwrite": "?1", "Accept-Language": "en-US", "Accept": "application/json"}
         response = requests.put(f"http://{self.ip}/api/v1/files/{storage}/{path}", headers=headers, data=fileTxt)
         #print(response.text)
         return True
+    def printFileOnUSB(self, nickname,bgcode = False, storage = "USB"):
+        headers = {"X-API-KEY": self.key, "Accept-Language": "en-US", "Accept": "application/json"}
+        if bgcode:
+            path = nickname + ".bgcode"
+        else:
+            path = nickname + ".gcode"
+        response = requests.put(f"http://{self.ip}/api/v1/files/{storage}/{path}")
+        return response.ok
+
     def transferStatus(self):
         self.refreshData()
         return self.transfer
@@ -287,17 +302,18 @@ class SinglePrinter():
             self.printer.gcode(f"M117 {message}")
 
         
-    def upload(self, print : IndividualPrint):
+    def upload(self, print : IndividualPrint, printImmedietly = True):
         """
         Uploads using a IndividualPrint Object
         """
 
         file_contents = requests.get(print.file).text
-        self.printer.upload(file = (print.nickname + ".gcode", file_contents), location= "local",print= True)
+        self.printer.upload(file = (print.nickname + ".gcode", file_contents), location= "local",print= printImmedietly)
         time.sleep(1)
-        self.printer.select(location= print.nickname + ".gcode", print= True)
-        self.currentFile = file_contents
-        self.user = print.creator
+        if printImmedietly:
+            self.printer.select(location= print.nickname + ".gcode", print= True)
+            self.currentFile = file_contents
+            self.user = print.creator
 
     def abort(self):
         try:
@@ -438,12 +454,55 @@ class Camera():
                         del self.buffer[:number]
                 time.sleep(1/self.frameRate)
 
+class PrintLater():
+    def __init__(self, time, fileContents, nickname, printer, bgcode = False):
+        self.time = time
+        self.fileContents = fileContents
+        self.printer = printer
+        self.type = self.printer.type
+        self.nickname = nickname
+        self.bgcode = bgcode
+        if self.type == "Mk4":
+            self.printer.upload(self.fileContents, self.nickname, self.bgcode, False)
+        else:
+            self.printer.printer.upload(file=(self.nickname + ".gcode", self.fileContents), location="local", print=False)
+        #Preheat time prestart is in minutes
+
+    def preheat(self):
+        if self.type == "Mk3" or self.printer.serial != None:
+            self.printer.preheat()
+            if self.type == "Mk3":
+                self.printer.displayMSG("Preheating for scheduled print...")
+            print("[OPERATIONAL] Preheating in anticipation of print")
+        else:
+            print("[NOTICE] Could not preheat due to serial connection not available on Mk4, will print in 5 minutes if able")
+    def ready2print(self):
+        if self.type == "Mk4":
+            self.printer.refreshData()
+            if self.printer.state.lower() not in ["printing", "paused"]:
+                if self.printer.printFileOnUSB(self.nickname, self.bgcode):
+                    print(f"[OPERATIONAL] Scheduled print successfully started on {self.printer.nickname}")
+                else:
+                    print(f"[ERROR] There was an issue printing on {self.printer.nickname}")
+                    if self.printer.serial != None:
+                        self.printer.cooldown()
+                        print("[NOTICE] Cooling down due to issue when going to print")
+            else:
+                print(f"[WARNING] Standing down from scheduled print on {self.printer.nickname} due to current print")
+        else:
+            if self.printer.state.lower() not in ["paused", "printing", "pausing", "cancelling"]:
+                self.printer.printer.select(location=self.nickname + ".gcode", print=True)
+                print(f"[OPERATIONAL] Scheduled print successfully started on {self.printer.nickname}")
+            else:
+                print(f"[WARNING] Standing down from scheduled print on {self.printer.nickname} due to current print")
+
 class Liminal():
 
     def __init__(self):
         self.config = json.load(open(f"{cwd}/ref/config.json"))
         self.printers = []
         self.MK4Printers = []
+        self.scheduledPrints = []
         self.accounts = list(self.config["students"].keys())
         self.cameras = []
         self.systemColor = "DodgerBlue"
@@ -536,6 +595,17 @@ class Liminal():
         for printer in self.MK4Printers:
             printer.abort()
         #Implement methods for display & mobile notifications to dispatch
+    def printWatcher(self):
+        print("[OPERATIONAL] PrintWatcher online")
+        while True:
+            currentTime = datetime.now()
+            for scheduledPrint in self.scheduledPrints:
+                #Determine if it should preheat
+                if scheduledPrint.time <= (currentTime - datetime.timedelta(minutes= 5)):
+                    scheduledPrint.preheat()
+                if scheduledPrint.time <= currentTime:
+                    scheduledPrint.ready2print()
+            time.sleep(60)
 
 
 

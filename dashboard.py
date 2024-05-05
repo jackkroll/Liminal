@@ -746,6 +746,8 @@ if __name__ == '__main__':
         camThread = threading.Thread(target=camera.timelapseLogger)
         threads.append(camThread)
 
+    threads.append(threading.Thread(target=liminal.printWatcher))
+
     for thread in threads:
         thread.start()
     app.run("0.0.0.0", 8000, False)
