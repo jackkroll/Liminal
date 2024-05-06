@@ -560,7 +560,12 @@ def ipManagement():
             <button type="submit">Update IP Address</button>
             </form>
             """
-    
+            for printer in liminal.MK4Printers:
+                if printer.nickname == jsonValues[item]["nickname"]:
+                    if printer.serial != None:
+                        body += '<h3 style="color:green">Connected via serial</h3>'
+                    else:
+                        body += '<h3 style="color:orange">Serial connection failed</h3>' 
     body += """
     <h1 style="color:red"> WARNING: Changing these values may result in this software not recognizing printers, only do this if you know what you're doing </h1>
     """
