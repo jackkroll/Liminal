@@ -92,8 +92,13 @@ def index():
     body += """
     <div style="padding-top:10px; padding-bottom:20px">
       <a href="estop" style="background-color:#c43349" class="button">E-STOP</a>
-      <a href="dev" class="button">Developer Portal</a>
-      <a href="db" class="button">Database</a>"""
+      <a href="dev" class="button">Developer Portal</a>"""
+    try:
+        prints_ref
+        body += '<a href="db" class="button">Database</a>'
+    except NameError:
+        pass
+
     if len(liminal.cameras) > 0:
         body += """<a href="cctv" class="button" class="button">Cameras</a>"""
     body +="""
@@ -187,12 +192,33 @@ def index():
                     liminal.printers.remove(printer)
                 print(f"[ERROR] Error refreshing data when displaying dashboard for {printer.nickname}")
             else:
-                body += f'<h1 style="color:{liminal.systemColor};"><a href = http://{printer.ip}>{printer.nickname}</a> </h1>'
+                body += '<div style="display:flex;">'
+                body += f'<h1 class="printerTitle"><a href = http://{printer.ip};style="color:{liminal.systemColor}">{printer.nickname}</a> </h1>'
+                if printer.serial != None:
+                    if printer.fetchNozzleTemp() >= 200:
+                        body += f'''
+                                <form  action = "{url_for("cooldown")}" method = post>
+                                <input type="hidden" name="printer" value="{printer.nickname}">
+                                <input class="interactionButton" style="background-color:LightSkyBlue" type = "submit" value = "Cooldown"> 
+                                </form>
+                        '''
+                    else:
+                        body += f'''
+                                <form style="margin-top:5px; margin-left:10px;margin-bottom:0px;"action = "{url_for("functions")}" method = post>
+                                <input type="hidden" name="printer" value="{printer.nickname}">
+                                <input class="interactionButton" style="background-color:tomato" type = "submit" value = "Preheat"> 
+                                </form>
+                                '''
+                body += '</div>'
+
                 for camera in liminal.cameras:
                     if camera.printer != None and camera.printer.nickname == printer.nickname:
                         body += f"""<img src="{url_for("video_feed", cameraNum=camera.cameraNumber)}" alt="Video Stream">"""
-                body += f'<h3 style="color:white;">Nozzle: {printer.fetchNozzleTemp()}</h3>'
-                body += f'<h3 style="color:white;">Bed: {printer.fetchBedTemp()}</h3>'
+                body += '<div style="display:flex;">'
+
+                body += f'<h3 style="color:white;margin-right: 10px">Nozzle: {printer.fetchNozzleTemp()}</h3>'
+                body += f'<h3 style="color:white;margin-right: 10px">Bed: {printer.fetchBedTemp()}</h3>'
+                body += '</div>'
                 if "printing" in printer.state.lower() and printer.fetchNozzleTemp() >= 200:
                     body += f'<h3 style="color:white;">Currently in use | {printer.progress}% Complete</h3>'
                 else:
@@ -223,19 +249,19 @@ def functions():
     else:
         #Implement API Key validation to ensure legitimate requests
         if request.form.get("printer") == "all":
-            for printer in liminal.printers:
+            for printer in liminal.printers + liminal.MK4Printers:
                 printer.preheat()
             return redirect(url_for("index"))
         else:
             print(request.form.get(""))
-            for printer in liminal.printers:
+            for printer in liminal.printers + liminal.MK4Printers:
                 if request.form.get("printer") == printer.nickname:
                     printer.preheat()
             return redirect(url_for("index"))
 
 @app.route('/cooldown', methods = ["POST"])
 def cooldown():
-    for printer in liminal.printers:
+    for printer in liminal.printers + liminal.MK4Printers:
         if request.form.get("printer") == printer.nickname:
             printer.cooldown()
             return True
@@ -674,13 +700,22 @@ def setPrinterStatus():
 
 
         return body
+
+@app.errorhandler(404)
+@auth.login_required()
+def notFound(error):
+    body = f'<img src= "https://i.redd.it/x3tgtg5hniyb1.jpeg" alt = "THEREWASAMISINPUT">'
+    body += "<h3>This page doesn't exist, either me or you misinput something</h3>"
+    return body
 @app.route('/timelapse')
+@auth.login_required()
 def timelapse():
     try:
         return send_file(f"Clip.mp4")
     except:
         return "Error downloading last timelapse..."
 @app.errorhandler(500)
+@auth.login_required()
 def fallback(error):
     body = ""
     body += f'<h1> There was an error somewhere, here is a fallback to printer URLS: </h1>'
@@ -694,7 +729,19 @@ def fallback(error):
             body += f'<h1 style="color:{liminal.systemColor};"><a href = http://{printer.ip}>{printer.nickname}</a> </h1>'
         except Exception:
             print("[ERROR] Error adding printer to falback")
+    body += f'<h1>Debug details: </h1>'
+    for printer in liminal.printers:
+        body += f'<h5>{printer.nickname}</h5>'
+    for printer in liminal.MK4Printers:
+        if printer.serial != None:
+            body += f'<h5>{printer.nickname} w/ serial</h5>'
+        else:
+            body += f'<h5>{printer.nickname} w/o serial</h5>'
     return body
+@app.route('/error')
+@auth.login_required()
+def troubleMakrer():
+    return 500
 @app.route('/camera/raw/<path:cameraNum>')
 @auth.login_required()
 def video_feed(cameraNum):
