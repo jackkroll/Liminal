@@ -1,7 +1,7 @@
 import datetime,json,random,time,string,os,sys, threading, cv2, requests
 from flask import Flask, request, send_file, redirect, url_for, Response
 from firebase_admin import credentials, initialize_app, storage
-from main import IndividualPrint,SinglePrinter, Liminal
+from main import IndividualPrint,SinglePrinter, Liminal,PrintLater
 import firebase_admin
 from firebase_admin import credentials, firestore
 import numpy as np
@@ -787,6 +787,27 @@ def mk4LoadingScreen(printerNickname):
                 Mk4 Transfer status:<br>{printer.transfer}% Complete"""
             else:
                 return "<h1>Transfer status Complete?</h1>"
+            
+@app.route('/printLater', method = "PUT")
+@auth.login_required()
+def printLater():
+    #printer : Printer Name ex. Left Printer
+    #url : The GCODE URL (from firebase)
+    #creator: The name of the uploader
+    #material: The name of the filament, currently unused
+    #printercode: unestablished right now, but is a needed input
+    #nickname: The name of the print
+    printerToPrint = None
+    for printer in liminal.printers + liminal.MK4Printers:
+        if request.form.get("nickname") == printer.nickname:
+            printerToPrint = printer
+    if printerToPrint != None:
+        
+        #time, fileContents, nickname, printer, bgcode = False
+        file_contents = request.files["gcode"].stream.read()
+        time = request.form.get("date")
+        printLaterobj = PrintLater(time,file_contents)
+        liminal.scheduledPrints.append(printLaterobj)
 
 if __name__ == '__main__':
     threads = []
