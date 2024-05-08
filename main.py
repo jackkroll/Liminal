@@ -462,6 +462,7 @@ class PrintLater():
         self.type = self.printer.type
         self.nickname = nickname
         self.bgcode = bgcode
+        self.preheating = False
         if self.type == "Mk4":
             self.printer.upload(self.fileContents, self.nickname, self.bgcode, False)
         else:
@@ -469,12 +470,14 @@ class PrintLater():
         #Preheat time prestart is in minutes
 
     def preheat(self):
-        if self.type == "Mk3" or self.printer.serial != None:
+        if self.type == "MK3" or self.printer.serial != None:
             self.printer.preheat()
-            if self.type == "Mk3":
+            if self.type == "MK3":
                 self.printer.displayMSG("Preheating for scheduled print...")
+            self.preheating = True
             print("[OPERATIONAL] Preheating in anticipation of print")
         else:
+            self.preheating = True
             print("[NOTICE] Could not preheat due to serial connection not available on Mk4, will print in 5 minutes if able")
     def ready2print(self):
         if self.type == "Mk4":
@@ -601,11 +604,12 @@ class Liminal():
             currentTime = datetime.now()
             for scheduledPrint in self.scheduledPrints:
                 #Determine if it should preheat
-                if scheduledPrint.time <= (currentTime - datetime.timedelta(minutes= 5)):
+                if scheduledPrint.time <= (currentTime + timedelta(minutes=5)) and not scheduledPrint.preheating:
                     scheduledPrint.preheat()
                 if scheduledPrint.time <= currentTime:
                     scheduledPrint.ready2print()
-            time.sleep(60)
+                    self.scheduledPrints.remove(scheduledPrint)
+            time.sleep(10)
 
 
 

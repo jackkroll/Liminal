@@ -5,7 +5,7 @@ from main import IndividualPrint,SinglePrinter, Liminal,PrintLater
 import firebase_admin
 from firebase_admin import credentials, firestore
 import numpy as np
-
+from datetime import datetime
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -53,9 +53,12 @@ def index():
     file = open((f"{cwd}/ref/values.json"))
     jsonValues = json.load(file)
     file.close()
-
+    if request.args.get("later") == "true":
+        printLaterEnabled = True
+    else:
+        printLaterEnabled = False
+    print(printLaterEnabled)
     addedPrinters = 0
-
     file =open((f"{cwd}/ref/config.json"))
     config = json.load(file)
     file.close()
@@ -74,6 +77,7 @@ def index():
     padding:10px;
     border-radius:15px;
     text-decoration:none;
+    cursor:pointer;
     }}
     .interactionButton{{
     align-self:flex-end;
@@ -82,10 +86,12 @@ def index():
     color:white;
     border-radius:15px;
     text-decoration:none;
+    cursor:pointer;
     }}
     .printerTitle{{
     margin-top:5px;
     margin-bottom:0px;
+    cursor:pointer;
     }}
     </style>
     '''
@@ -101,10 +107,21 @@ def index():
 
     if len(liminal.cameras) > 0:
         body += """<a href="cctv" class="button" class="button">Cameras</a>"""
+
+    if printLaterEnabled:
+        body += """<a href="/" style="background-color:#165a73" class="button">Return to normal printing</a>"""
+    else:
+        body += """<a href="?later=true" style="background-color:#165a73" class="button">Print Later [BETA]</a>"""
+
+    if len(liminal.scheduledPrints) > 0:
+        body += """
+        <a href="printLaterEstop" style="background-color:#c43349" class="button">Cancel All Scheduled Prints</a>"""
     body +="""
     <a href="timelapse" class="button">Download last timelapse</a>
     </div>
-        """
+    """
+
+
     for printer in liminal.printers:
         req = requests.get(f"{printer.url}/api/printer", headers={f"X-API-KEY": f"{printer.key}"})
         if not req.ok:
@@ -169,7 +186,7 @@ def index():
                 # nickname: The name of the print
                 #<input type="hidden" name="creator" placeholder="notSet">
                 body += f"""
-    <form style="color:white" action="{url_for('uploadPrintURL')}" method="post" enctype="multipart/form-data">
+    <form style="color:white" action="{url_for('printLater') if printLaterEnabled else url_for('uploadPrintURL') }" method="post" enctype="multipart/form-data">
     <input type="hidden" name="printer" value="{printer.nickname}">
     <input type="hidden" name="printercode" value="{printer.code}">
     <input type="hidden" name="creator" value="{auth.current_user()}">
@@ -178,9 +195,16 @@ def index():
     <input type="file" id="url" name="gcode" accept=".gcode">
     <label for="nickname">Print Name:</label>
     <input type="text" id="nickname" name="nickname" placeholder="nickname">
-    <button type="submit">Upload</button>
-    </form>
     """
+                if printLaterEnabled:
+                    body +="""
+                    <label for="date">Time to print:</label>
+                    <input type="datetime-local" id="date" name="date">
+                    """
+                body += """
+                <button type="submit">Upload</button>
+                </form>
+                """
 
     #Mk4 Printers
     for printer in liminal.MK4Printers:
@@ -568,6 +592,13 @@ def ipManagement():
             except Exception as e:
                 print(e)
                 body += '<h3 style="color:red"> Printer is not reachable via HTTP</h3>'
+            nicknames = []
+            for printer in liminal.printers + liminal.MK4Printers:
+                nicknames.append(printer.nickname)
+            if item in nicknames:
+                body += '<h3 style="color:green"> Printer registered in LMNL</h3>'
+            else:
+                body += '<h3 style="color:red"> Printer is not registered in LMNL</h3>'
 
 
             body += f"""
@@ -788,7 +819,7 @@ def mk4LoadingScreen(printerNickname):
             else:
                 return "<h1>Transfer status Complete?</h1>"
             
-@app.route('/printLater', method = "PUT")
+@app.route('/printLater', methods = ["POST"])
 @auth.login_required()
 def printLater():
     #printer : Printer Name ex. Left Printer
@@ -799,16 +830,39 @@ def printLater():
     #nickname: The name of the print
     printerToPrint = None
     for printer in liminal.printers + liminal.MK4Printers:
-        if request.form.get("nickname") == printer.nickname:
+        if request.form.get("printer") == printer.nickname:
             printerToPrint = printer
     if printerToPrint != None:
         
         #time, fileContents, nickname, printer, bgcode = False
         file_contents = request.files["gcode"].stream.read()
-        time = request.form.get("date")
-        printLaterobj = PrintLater(time,file_contents)
-        liminal.scheduledPrints.append(printLaterobj)
 
+        if request.files["gcode"].filename.split(".")[-1] == "bgcode":
+            binaryGcode = True
+        else:
+            binaryGcode = False
+
+        format = "%Y-%m-%dT%H:%M"
+        rawNickname = request.form.get("nickname")
+        nickname = ""
+        for char in rawNickname:
+            if char.isalnum():
+                nickname.join(char)
+        if nickname == "":
+            nickname = "Untitled"
+        time = datetime.strptime(request.form.get("date"), format)
+        printLaterobj = PrintLater(time,file_contents,nickname,printerToPrint,binaryGcode)
+
+        liminal.scheduledPrints.append(printLaterobj)
+        print(f"[OPERATIONAL] Print has been scheduled on {printerToPrint.nickname} for {time.strftime("%Y-%m-%d %H:%M:%S")}")
+        return "Print has been scheduled!"
+    else:
+        return f'Printer "{request.form.get("printer")}" not found'
+@app.route('/printLaterEstop', methods = ["GET"])
+@auth.login_required()
+def printLaterEstop():
+    liminal.scheduledPrints = []
+    return "Removed all scheduled prints"
 if __name__ == '__main__':
     threads = []
     for camera in liminal.cameras:
