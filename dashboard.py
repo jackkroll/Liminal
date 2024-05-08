@@ -854,7 +854,7 @@ def printLater():
         printLaterobj = PrintLater(time,file_contents,nickname,printerToPrint,binaryGcode)
 
         liminal.scheduledPrints.append(printLaterobj)
-        print(f"[OPERATIONAL] Print has been scheduled on {printerToPrint.nickname} for {time.strftime("%Y-%m-%d %H:%M:%S")}")
+        print(f"[OPERATIONAL] Print has been scheduled on {printerToPrint.nickname} for {time.strftime('%Y-%m-%d %H:%M:%S')}")
         return "Print has been scheduled!"
     else:
         return f'Printer "{request.form.get("printer")}" not found'
