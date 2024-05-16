@@ -345,10 +345,10 @@ def uploadPrintURL():
                     material = request.form.get("material")
                     printerCode = request.form.get("printercode")
                     rawNickname = request.form.get("nickname")
-                    nickname = ""
-                    for char in rawNickname:
-                        if char.isalnum():
-                            nickname.join(char)
+                    nickname = rawNickname
+                    #for char in rawNickname:
+                        #if char.isalnum():
+                            #nickname.join(char)
                     print("[OPERATIONAL] Form data successfully gathered")
                 except Exception as e:
                     print("[ERROR] Failed to gather form data")
@@ -844,10 +844,10 @@ def printLater():
 
         format = "%Y-%m-%dT%H:%M"
         rawNickname = request.form.get("nickname")
-        nickname = ""
-        for char in rawNickname:
-            if char.isalnum():
-                nickname.join(char)
+        nickname = rawNickname
+        #for char in rawNickname:
+            #if char.isalnum():
+                #nickname.join(char)
         if nickname == "":
             nickname = "Untitled"
         time = datetime.strptime(request.form.get("date"), format)
