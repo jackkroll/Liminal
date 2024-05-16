@@ -373,7 +373,7 @@ def uploadPrintURL():
                         else:
                             binaryGcode = False
                         printer.upload(file_contents, nickname, binaryGcode)
-                        return redirect(url_for("mk4LoadingScreen"))
+                        return redirect(f'{url_for("mk4LoadingScreen")}/{printer.nickname}')
                         print("[OPERATIONAL] Successfully printed onto a Mk4 printer")
                     else:
                         print(f"[ERROR] The printer {request.form.get('printer')} is not registered")
