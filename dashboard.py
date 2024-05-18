@@ -11,7 +11,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 liminal = Liminal()
-
 #autoUpdateTest2
 auth = HTTPBasicAuth()
 
@@ -582,6 +581,7 @@ def ipManagement():
             try:
                 req = requests.get(f'{jsonValues[item]["ipAddress"]}/api/printer', headers={"X-API-KEY": f'{jsonValues[item]["apiKey"]}'})
                 body += '<h3 style="color:green"> Printer is reachable via HTTP</h3>'
+                octoprint = True
                 if not req.ok:
                     body += '<h3 style="color:orange"> Printer is not operational on Octoprint </h3>'
                 else:
@@ -591,10 +591,22 @@ def ipManagement():
                         body += '<h3 style="color:green"> Printer is operational via Octoprint</h3>'
             except Exception as e:
                 print(e)
+                octoprint = False
                 body += '<h3 style="color:red"> Printer is not reachable via HTTP</h3>'
             nicknames = []
             for printer in liminal.printers + liminal.MK4Printers:
                 nicknames.append(printer.nickname)
+                if printer.nickname == item and octoprint:
+                    percentUsed = printer.percentUsed()
+                    if percentUsed > 90:
+                        color = "red"
+                    elif percentUsed > 75:
+                        color = "orange"
+                    elif percentUsed > 60:
+                        color = "yellow"
+                    else:
+                        color = "green"
+                    body += f'<h3 style="color:{color}"> {int(percentUsed)}% of onboard storage used</h3>'
             if item in nicknames:
                 body += '<h3 style="color:green"> Printer registered in LMNL</h3>'
             else:
@@ -818,7 +830,15 @@ def mk4LoadingScreen(printerNickname):
                 Mk4 Transfer status:<br>{printer.transfer}% Complete"""
             else:
                 return "<h1>Transfer status Complete?</h1>"
-            
+
+@app.route('/nukeFiles/<printerNickname>')
+@auth.login_required()
+def nukeFiles(printerNickname):
+    for printer in liminal.printers:
+        if printer.nickname == printerNickname:
+            printer.nukeFiles()
+            return f"Success, percent storage is now: {printer.percentUsed()}"
+
 @app.route('/printLater', methods = ["POST"])
 @auth.login_required()
 def printLater():

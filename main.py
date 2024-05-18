@@ -344,35 +344,27 @@ class SinglePrinter():
         times.pop(-1)
         for item in range(0, len(times), 2):
             gaps += (times[item], times[item + 1], times[item + 1] - times [item])
-            #Appends a tuple containing the gaps start, and the gaps end, and a timedelta object of the time between
+            #Appends a tuple containing the gaps start, and the gaps end, and a timedelta object of the time bet
 
+    def percentUsed(self):
+        fileDetails = self.printer.files(recursive = True)
+        percentUsed = 100 - ((fileDetails["free"]/fileDetails["total"]) * 100)
+        return percentUsed
+    def nukeFiles(self):
+        fileDetails = self.printer.files(recursive=True)
+        print("[OPERATIONAL] Nuking local files to clear storage")
+        for file in fileDetails["files"]:
+            if "path" in file:
+                path = file["path"]
+                print(path)
+                location = file["origin"]
+                print(f"{location}/{path}")
+                try:
+                    self.printer.delete(f"{location}/{path}")
+                    print("[OPERATIONAL] Deleted file")
+                except RuntimeError:
+                    print("[WARNING] File could not be removed")
 
-    def addToQueueOld(self, gcode: IndividualPrint):
-        officeHours = [(datetime.time(hour= 18), datetime.time(hour= 21))]
-
-        info = self.printer.job_info()
-        startTime = datetime.now()
-        nextAvilableStart = 0
-        printTime = gcode.timeToPrint
-        if info["state"] == "Printing":
-            remaining = info["progress"]["printTimeLeft"]
-            remaining += (10 * 60) #Adds to minute buffer in seconds
-            nextAvilableStart += remaining
-        startTime += datetime.timedelta(seconds=nextAvilableStart)
-        for set in officeHours:
-            if datetime.time > set[0] and datetime < set[1] and startTime >= set[1]:
-                print("yuh")
-        #If we're within this set off office hours and the current print will end outside of them
-
-        #Gap optimization algorithm
-        for singlePrint in self.queue:
-            #Calculating the timedelta between the requested print time and the current estimated next avilable start time
-            #If that gap is greater than the time to print, slot that print in.
-            if (singlePrint.estimatedStartTime - startTime) > gcode.timeToPrint:
-                self.queue.insert(self.queue.index(singlePrint), gcode)
-                #Setting the object it's estimated start time
-                gcode.estimatedStartTime = startTime
-                break
 
 
 
