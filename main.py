@@ -86,7 +86,7 @@ class Mk4Printer():
         self.transfer = None
         if self.portStr != None:
             try:
-                self.serial = serial.Serial('/dev/ttyAMC0', baudrate=115200, timeout=5)
+                self.serial = serial.Serial('/dev/ttyACM0', baudrate=115200, timeout=5)
                 try:
                     self.serial.open()
                 except Exception:
