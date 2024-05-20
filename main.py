@@ -1,4 +1,5 @@
 import time, asyncio, os, pytimeparse, datetime, requests, random, math,json, socket, sys, cv2, serial
+from serial.tools import list_ports
 from datetime import datetime, timedelta
 from octorest import OctoRest
 from firebase_admin import credentials, initialize_app, storage, firestore
