@@ -93,7 +93,8 @@ class Mk4Printer():
                     print(f"[NOTICE] Serial port could not be opened, possibly already open")
                 time.sleep(10)
                 print(f"[SERIAL STARTUP ON {self.nickname.upper()}]\n{self.serial.read(256).decode()}")
-            except Exception:
+            except Exception as e:
+                print(e)
                 self.serial = None
                 print(f"[ERROR] Serial could not be configured for {self.nickname} on port {self.portStr}")
         else:
