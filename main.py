@@ -546,6 +546,7 @@ class Liminal():
                 ports = serial.tools.list_ports.comports()
                 mk4PortStr = None
                 for port in ports:
+                    print(f"[DEBUG] {port.name} {port.description}")
                     if "prusa" in port.description.lower():
                         mk4PortStr = port.name
                 print("[OPERATIONAL] Mk4 Printer has been successfully added")
