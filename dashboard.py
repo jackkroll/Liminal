@@ -77,6 +77,7 @@ def index():
     border-radius:15px;
     text-decoration:none;
     cursor:pointer;
+    margin:5px;
     }}
     .interactionButton{{
     align-self:flex-end;
@@ -95,7 +96,7 @@ def index():
     </style>
     '''
     body += """
-    <div style="padding-top:10px; padding-bottom:20px">
+    <div style="display:flex">
       <a href="estop" style="background-color:#c43349" class="button">E-STOP</a>
       <a href="dev" class="button">Developer Portal</a>"""
     try:
@@ -878,6 +879,65 @@ def printLater():
         return "Print has been scheduled!"
     else:
         return f'Printer "{request.form.get("printer")}" not found'
+@app.route('/account')
+@auth.login_required()
+def accountManger():
+    file = open((f"{cwd}/ref/config.json"))
+    jsonValues = json.load(file)
+    file.close()
+    #Developer, access to developer settings + debug
+    #Manager, configure roles
+    #Student, basic printing capabilities
+    body = "<html><body style = background-color:#1f1f1f>"
+    body += f'''
+      <head>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter">
+      </head>
+      <style>
+      body {{
+    font-family: "Inter", sans-serif;
+      }}
+      .button{{
+      background-color:{liminal.systemColor};
+      color:white;
+      padding:10px;
+      border-radius:15px;
+      text-decoration:none;
+      cursor:pointer;
+      }}
+      .interactionButton{{
+      align-self:center;
+      padding:10px;
+      margin:0px;
+      color:white;
+      border-radius:15px;
+      text-decoration:none;
+      cursor:pointer;
+      margin:5px;
+      }}
+      .printerTitle{{
+      margin-top:5px;
+      margin-bottom:0px;
+      cursor:pointer;
+      }}
+      </style>
+      '''
+    for account in jsonValues["students"]:
+        body += f'<div style="display:flex"> <h3 style="color:white; padding:5px">{account} - {jsonValues["students"][account]} </h3>'
+        body += f'<a href="account/reset/{account}" class="interactionButton" style = "background-color:orange">Reset Password</a>'
+        body += f'<a href="account/remove/{account}" class="interactionButton" style = "background-color:#c43349">Remove User</a>'
+        body += '</div>'
+        body += f'''
+        <form action="/account/update/{account}">
+          <select name="role" id="role">
+            <option value="student">Student</option>
+            <option value="manager">Manager</option>
+            <option value="developer">Developer</option>
+          </select>
+          <input type="submit" value="Update Role">
+        </form>
+        '''
+        return body
 @app.route('/printLaterEstop', methods = ["GET"])
 @auth.login_required()
 def printLaterEstop():
