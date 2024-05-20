@@ -541,8 +541,14 @@ class Liminal():
         for item in self.config:
             if "Mk4IPAddress" in self.config[item]:
                 #nickname, ipAddress, apiKey, prefix
+                prusaBaudrate = 115200
+                ports = serial.tools.list_ports.comports()
+                mk4PortStr = None
+                for port in ports:
+                    if "prusa" in port.description.lower():
+                        mk4PortStr = port.name
                 print("[OPERATIONAL] Mk4 Printer has been successfully added")
-                self.MK4Printers.append(Mk4Printer(item, self.config[item]["Mk4IPAddress"], self.config[item]["apiKey"], self.config[item]["prefix"]))
+                self.MK4Printers.append(Mk4Printer(item, self.config[item]["Mk4IPAddress"], self.config[item]["apiKey"], self.config[item]["prefix"], mk4PortStr))
                 for camera in self.cameras:
                     try:
                         if camera.index == int(self.config[item]["cameraIndex"]):
