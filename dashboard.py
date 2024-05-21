@@ -631,7 +631,7 @@ def ipManagement():
             </form>
             """
             for printer in liminal.MK4Printers:
-                if printer.nickname == jsonValues[item]["nickname"]:
+                if printer.nickname == item:
                     if printer.serial != None:
                         body += '<h3 style="color:green">Connected via serial</h3>'
                     else:
