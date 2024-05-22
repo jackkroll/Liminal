@@ -1007,4 +1007,4 @@ if __name__ == '__main__':
 
     for thread in threads:
         thread.start()
-    app.run("0.0.0.0", 8000, False)
+    app.run("0.0.0.0", 8000, True)
