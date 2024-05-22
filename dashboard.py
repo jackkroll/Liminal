@@ -964,8 +964,8 @@ def accountManger():
       '''
     for account in jsonValues["students"]:
         body += f'<div style="display:flex"> <h3 style="color:white; padding:5px">{account} - {jsonValues["students"][account]} </h3>'
-        body += f'<a href="{url_for("resetPassword", username = account)}" class="interactionButton" style = "background-color:orange">Reset Password</a>'
-        body += f'<a href="{url_for("removeUser", username = account)}" class="interactionButton" style = "background-color:#c43349">Remove User</a>'
+        body += f'<a href="{url_for('resetPassword', username = account)}" class="interactionButton" style = "background-color:orange">Reset Password</a>'
+        body += f'<a href="{url_for('removeUser', username = account)}" class="interactionButton" style = "background-color:#c43349">Remove User</a>'
         body += '</div>'
         body += f'''
         <form action="{url_for('updateUser')}">
