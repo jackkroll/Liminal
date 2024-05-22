@@ -905,6 +905,20 @@ def printLater():
         return "Print has been scheduled!"
     else:
         return f'Printer "{request.form.get("printer")}" not found'
+
+@app.route('/account/reset/<username>')
+@auth.login_required(role=["developer", "manager"])
+def resetPassword(username):
+    return f"Incomeplete method for account reset for user {username}"
+@app.route('/account/remove/<username>')
+@auth.login_required(role=["developer", "manager"])
+def removeUser(username):
+    return f"Incomeplete method for account deletion for user {username}"
+
+@app.route('/account/modify/<username>')
+@auth.login_required(role=["developer", "manager"])
+def updateUser(username):
+    return f"Incomeplete method for account modification for user {username} to be set to {request.args.get('role')}"
 @app.route('/account')
 @auth.login_required(role=["developer", "manager"])
 def accountManger():
@@ -950,11 +964,11 @@ def accountManger():
       '''
     for account in jsonValues["students"]:
         body += f'<div style="display:flex"> <h3 style="color:white; padding:5px">{account} - {jsonValues["students"][account]} </h3>'
-        body += f'<a href="account/reset/{account}" class="interactionButton" style = "background-color:orange">Reset Password</a>'
-        body += f'<a href="account/remove/{account}" class="interactionButton" style = "background-color:#c43349">Remove User</a>'
+        body += f'<a href="{url_for("resetPassword", username = account)}" class="interactionButton" style = "background-color:orange">Reset Password</a>'
+        body += f'<a href="{url_for("removeUser", username = account)}" class="interactionButton" style = "background-color:#c43349">Remove User</a>'
         body += '</div>'
         body += f'''
-        <form action="/account/update/{account}">
+        <form action="{url_for('updateUser')}">
           <select name="role" id="role">
             <option value="student">Student</option>
             <option value="manager">Manager</option>

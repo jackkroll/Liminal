@@ -129,6 +129,7 @@ class Mk4Printer():
         headers = {"X-API-KEY": self.key}
         response = requests.get(f"http://{self.ip}/api/v1/status", headers=headers)
         data = response.json()
+        print(data)
         self.nozzleTemp = data["printer"]["temp_nozzle"]
         self.bedTemp = data["printer"]["temp_bed"]
         self.state = data["printer"]["state"]
