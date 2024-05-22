@@ -654,7 +654,7 @@ def ipManagement():
                     if printer.freeSpace != None:
                         body += f'<h3 style="color:blue">{printer.freeSpace/1_000_000_000}gb free on {printer.storageName}</h3>'
                     else:
-                        body += f'<h3 style="color:red">Could not determine free storage</h3>'
+                        body += f'<h3 style="color:orange">Could not determine free storage on {printer.storageName}, likely due to no Prusa API support</h3>'
     body += """
     <h1 style="color:red"> WARNING: Changing these values may result in this software not recognizing printers, only do this if you know what you're doing </h1>
     """
