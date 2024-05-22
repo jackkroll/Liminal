@@ -968,7 +968,7 @@ def accountManger():
         body += f'<a href="{url_for("removeUser", username = account)}" class="interactionButton" style = "background-color:#c43349">Remove User</a>'
         body += '</div>'
         body += f'''
-        <form action="{url_for('updateUser')}">
+        <form action="{url_for('updateUser',username = account)}">
           <select name="role" id="role">
             <option value="student">Student</option>
             <option value="manager">Manager</option>
