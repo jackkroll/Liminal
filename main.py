@@ -142,6 +142,13 @@ class Mk4Printer():
             self.transfer = data["transfer"]["progress"]
         else:
             self.transfer = None
+        if "storage" in data and "free_space" in data["storage"]:
+            self.freeSpace = data["storage"]["free_space"]
+            self.storageName = data["storage"]["name"]
+        else:
+            self.freeSpace = None
+            self.storageName = None
+
         print(response.json())
     def checkUpdate(self):
         headers = {"X-API-KEY": self.key}

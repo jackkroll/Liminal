@@ -31,7 +31,14 @@ def verify_password(username, password):
     if username in users and \
             check_password_hash(users.get(username), password):
         return username
-
+@auth.get_user_roles
+def get_user_roles(user):
+    if user in ["jack", "luke"]:
+        return ["developer"]
+    elif user in ["spencer", "katia"]:
+        return ["manager"]
+    else:
+        return ["student"]
 
 try:
     bucket = storage.bucket()
@@ -98,7 +105,11 @@ def index():
     body += """
     <div style="display:flex">
       <a href="estop" style="background-color:#c43349" class="button">E-STOP</a>
-      <a href="dev" class="button">Developer Portal</a>"""
+    """
+    if "developer" in get_user_roles(auth.current_user()):
+        body += """<a href="dev" class="button">Developer Portal</a>"""
+    else:
+        print(f"[DEBUG] Not authorized to view dev page: {get_user_roles(auth.current_user())}")
     try:
         prints_ref
         body += '<a href="db" class="button">Database</a>'
@@ -461,7 +472,7 @@ def map():
     return redirect(f"/search/{id}")
 
 @app.route('/dev/online',methods = ["GET", "POST"])
-@auth.login_required()
+@auth.login_required(role="developer")
 def setPrinterOnline():
     if request.method == "GET":
         return redirect(url_for("setPrinterStatus"))
@@ -475,7 +486,7 @@ def setPrinterOnline():
         return redirect(url_for("setPrinterStatus"))
 
 @app.route('/dev/ip',methods = ["GET", "POST"])
-@auth.login_required()
+@auth.login_required(role="developer")
 def changeIPAddr():
     if request.method == "GET":
         return redirect(url_for("setPrinterStatus"))
@@ -489,7 +500,7 @@ def changeIPAddr():
             json.dump(jsonValues,f,indent=4)
         return redirect(url_for("setPrinterStatus"))
 @app.route('/dev/camera',methods = ["GET", "POST"])
-@auth.login_required()
+@auth.login_required(role="developer")
 def changeCamMemory():
     if request.method == "GET":
         return redirect(url_for("setPrinterStatus"))
@@ -511,7 +522,7 @@ def changeCamMemory():
             json.dump(jsonValues,f,indent=4)
         return redirect(url_for("setPrinterStatus"))
 @app.route('/dev/ipMK4',methods = ["GET", "POST"])
-@auth.login_required()
+@auth.login_required(role="developer")
 def changeIPAddrMK4():
     if request.method == "GET":
         return redirect(url_for("setPrinterStatus"))
@@ -526,7 +537,7 @@ def changeIPAddrMK4():
         return redirect(url_for("setPrinterStatus"))
         
 @app.route('/dev/offline',methods = ["GET", "POST"])
-@auth.login_required()
+@auth.login_required(role="developer")
 def setPrinterOffline():
     if request.method == "GET":
         return redirect(url_for("setPrinterStatus"))
@@ -559,8 +570,12 @@ def clean():
     for printer in liminal.printers:
         printer.displayMSG(f"")
     return redirect(url_for("index"))
-@app.route('/ip',methods = ["GET"])
-@auth.login_required()
+@app.route('/ip')
+@auth.login_required(role="developer")
+def debugReRoute():
+    return redirect(url_for("ipManagement"))
+@app.route('/debug',methods = ["GET"])
+@auth.login_required(role="developer")
 def ipManagement():
     file = open(f"{cwd}/ref/config.json")
     jsonValues = json.load(file)
@@ -635,21 +650,25 @@ def ipManagement():
                     if printer.serial != None:
                         body += '<h3 style="color:green">Connected via serial</h3>'
                     else:
-                        body += '<h3 style="color:orange">Serial connection failed</h3>' 
+                        body += '<h3 style="color:orange">Serial connection failed</h3>'
+                    if printer.freeSpace != None:
+                        body += f'<h3 style="color:blue">{printer.freeSpace/1_000_000_000}gb free on {printer.storageName}</h3>'
+                    else:
+                        body += f'<h3 style="color:red">Could not determine free storage</h3>'
     body += """
     <h1 style="color:red"> WARNING: Changing these values may result in this software not recognizing printers, only do this if you know what you're doing </h1>
     """
     return body
 
 @app.route('/dev/mk4Update/<printer>/<type>', methods = ["POST"])
-@auth.login_required()
+@auth.login_required(role="developer")
 def updatePrinter(printer, type):
     for Mk4printer in liminal.MK4Printers:
         if Mk4printer.nickname == printer:
             Mk4printer.pushUpdate(type)
     return url_for("setPrinterStatus")
 @app.route('/dev',methods = ["GET"])
-@auth.login_required()
+@auth.login_required(role="developer")
 def setPrinterStatus():
     file = open(f"{cwd}/ref/values.json")
     jsonValues = json.load(file)
@@ -716,7 +735,7 @@ def setPrinterStatus():
         if len(liminal.MK4Printers) > 0:
             body += f'<h1 style="{liminal.systemColor}"> Mk Printers </h1>'
             for Mk4Printer in liminal.MK4Printers:
-                body += f'<h2> {Mk4Printer.nickname} </h2>'
+                body += f'<h2 style="color:white"> {Mk4Printer.nickname} </h2>'
                 prusalinkUpdate, systemUpdate = Mk4Printer.checkUpdate()
                 if not prusalinkUpdate:
                     body += '<button disabled> PrusaLink is up to date </button>'
@@ -745,8 +764,15 @@ def setPrinterStatus():
 
         return body
 
+@app.errorhandler(401)
+def notauthorized(error):
+    body = f"You don't have access to this page, you likely don't need it. Talk to a lead or a developer about this error"
+    return body
+@app.errorhandler(403)
+def forbidden(error):
+    body = f"You don't have access to this page, you likely don't need it. Talk to a lead or a developer about this error"
+    return body
 @app.errorhandler(404)
-@auth.login_required()
 def notFound(error):
     body = f'<img src= "https://i.redd.it/x3tgtg5hniyb1.jpeg" alt = "THEREWASAMISINPUT">'
     body += "<h3>This page doesn't exist, either me or you misinput something</h3>"
@@ -880,7 +906,7 @@ def printLater():
     else:
         return f'Printer "{request.form.get("printer")}" not found'
 @app.route('/account')
-@auth.login_required()
+@auth.login_required(role=["developer", "manager"])
 def accountManger():
     file = open((f"{cwd}/ref/config.json"))
     jsonValues = json.load(file)
@@ -943,6 +969,16 @@ def accountManger():
 def printLaterEstop():
     liminal.scheduledPrints = []
     return "Removed all scheduled prints"
+
+
+@app.route('/test')
+@auth.login_required(role="developer")
+def devOnly():
+    return "Welcome to da cool kids club"
+
+@auth.error_handler
+def auth_error(status):
+    return "You don't have access to this page. You likely don't need it. These pages are often restricted to leads and developers as they contain important database management tools, system configuration,account management, and debug information. If you think this is a mistake, talk to a developer or lead", status
 if __name__ == '__main__':
     threads = []
     for camera in liminal.cameras:
@@ -957,4 +993,4 @@ if __name__ == '__main__':
 
     for thread in threads:
         thread.start()
-    app.run("0.0.0.0", 8000, True)
+    app.run("0.0.0.0", 8000, False)
