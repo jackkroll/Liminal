@@ -120,7 +120,7 @@ class Mk4Printer():
     def returnHome(self):
         self.cmd("G28 W")
     def abort(self):
-        if serial != None:
+        if self.serial != None:
             self.cmd("M112")
         else:
             self.stop()
