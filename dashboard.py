@@ -919,6 +919,10 @@ def removeUser(username):
 @auth.login_required(role=["developer", "manager"])
 def updateUser(username):
     return f"Incomeplete method for account modification for user {username} to be set to {request.args.get('role')}"
+@app.route('/account/add')
+@auth.login_required(role=["developer", "manager"])
+def addUser():
+    return f"Incomeplete method for account addition for new user {request.args.get('name')} to be set to {request.args.get('role')}"
 @app.route('/account')
 @auth.login_required(role=["developer", "manager"])
 def accountManger():
@@ -963,21 +967,38 @@ def accountManger():
       </style>
       '''
     for account in jsonValues["students"]:
-        body += f'<div style="display:flex"> <h3 style="color:white; padding:5px">{account} - {jsonValues["students"][account]} </h3>'
+        body += f'<div style="display:flex"> <h2 style="color:white; padding:5px">{account} - {jsonValues["students"][account]} </h3>'
+        body += f'''
+                <form style= "align-self:center"action="{url_for('updateUser', username=account)}">
+                  <select name="role" id="role">
+                <option value="none" selected disabled hidden>Select a role</option>
+                    <option value="restricted">Restricted</option>
+                    <option value="student">Student</option>
+                    <option value="manager">Manager</option>
+                    <option value="developer">Developer</option>
+                  </select>
+                  <input type="submit" value="Update Role">
+                </form>
+                '''
         body += f'<a href="{url_for("resetPassword", username = account)}" class="interactionButton" style = "background-color:orange">Reset Password</a>'
         body += f'<a href="{url_for("removeUser", username = account)}" class="interactionButton" style = "background-color:#c43349">Remove User</a>'
         body += '</div>'
-        body += f'''
-        <form action="{url_for('updateUser',username = account)}">
+    #Add new account
+    body += '<h1 style = "color:green">Create New User:</h1>'
+    body += f'''
+    <form action="{url_for('addUser')}">
+        <label style="color:white" for="name">Name:</label>
+        <input type="text" id="name" name="name">
           <select name="role" id="role">
+          <option value="Restricted">Restricted</option>
             <option value="student">Student</option>
             <option value="manager">Manager</option>
             <option value="developer">Developer</option>
           </select>
-          <input type="submit" value="Update Role">
+          <input type="submit" value="Create User">
         </form>
-        '''
-        return body
+    '''
+    return body
 @app.route('/printLaterEstop', methods = ["GET"])
 @auth.login_required()
 def printLaterEstop():
