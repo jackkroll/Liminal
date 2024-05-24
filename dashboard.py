@@ -187,7 +187,7 @@ def index():
                 body += f'<h3 style="color:white;">Currently in use | {int(printer.fetchTimeRemaining()/60)} Minutes left</h3>'
                 #Implement time remaining methods :)
 
-            else:
+            elif "restricted" not in get_user_roles(auth.current_user()):
                 #Submission requrements:
                 # printer : Printer Name ex. Left Printer
                 # Gcode : The GCODE file
@@ -216,6 +216,8 @@ def index():
                 <button type="submit">Upload</button>
                 </form>
                 """
+            else:
+                body += '<h2 style = "color:orange"> You do not have proper permissions to print</h2>'
 
     #Mk4 Printers
     for printer in liminal.MK4Printers:
@@ -276,6 +278,7 @@ def index():
 
     return body
 @app.route('/heat', methods = ["GET", "POST"])
+@auth.login_required(role = ["student", "manager", "developer"])
 #This defines the webpage that will allow you to preheat printers
 #You can pass ALL to preheat all of them, and an individual name to preheat that one
 def functions():
@@ -295,6 +298,7 @@ def functions():
             return redirect(url_for("index"))
 
 @app.route('/cooldown', methods = ["POST"])
+@auth.login_required(role = ["student", "manager", "developer"])
 def cooldown():
     for printer in liminal.printers + liminal.MK4Printers:
         if request.form.get("printer") == printer.nickname:
@@ -302,7 +306,7 @@ def cooldown():
             return True
 
 @app.route('/pause', methods = ["POST"])
-@auth.login_required()
+@auth.login_required(role = ["student", "manager", "developer"])
 def pausePrint():
     if request.form.get("printer") == "all":
         for printer in liminal.printers:
@@ -318,7 +322,7 @@ def pausePrint():
                 printer.pause()
 
 @app.route('/resume', methods = ["POST"])
-@auth.login_required()
+@auth.login_required(role = ["student", "manager", "developer"])
 def resumePrint():
     if request.form.get("printer") == "all":
         for printer in liminal.printers:
@@ -333,7 +337,7 @@ def resumePrint():
             if request.form.get("printer") == printer.nickname:
                 printer.resume()
 @app.route('/print', methods = ["GET", "POST"])
-@auth.login_required()
+@auth.login_required(role = ["student", "manager", "developer"])
 #Form components nessesary:
 #printer : Printer Name ex. Left Printer
 #url : The GCODE URL (from firebase)
@@ -867,7 +871,7 @@ def nukeFiles(printerNickname):
             return f"Success, percent storage is now: {printer.percentUsed()}"
 
 @app.route('/printLater', methods = ["POST"])
-@auth.login_required()
+@auth.login_required(role = ["student", "manager", "developer"])
 def printLater():
     #printer : Printer Name ex. Left Printer
     #url : The GCODE URL (from firebase)
@@ -1005,11 +1009,6 @@ def printLaterEstop():
     liminal.scheduledPrints = []
     return "Removed all scheduled prints"
 
-
-@app.route('/test')
-@auth.login_required(role="developer")
-def devOnly():
-    return "Welcome to da cool kids club"
 
 @auth.error_handler
 def auth_error(status):
