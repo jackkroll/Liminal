@@ -260,7 +260,7 @@ def index():
                     body += f'<h3 style="color:white;">Currently in use | {printer.progress}% Complete</h3>'
                 else:
                     body += f"""
-                    <form style="color:white" action="{url_for('uploadPrintURL')}" method="post" enctype="multipart/form-data">
+                    <form style="color:white" action="{url_for('printLater') if printLaterEnabled else url_for('uploadPrintURL') }" method="post" enctype="multipart/form-data">
                     <input type="hidden" name="printer" value="{printer.nickname}">
                     <input type="hidden" name="printercode" value="{printer.prefix}">
                     <input type="hidden" name="creator" value="{auth.current_user()}">
@@ -269,6 +269,13 @@ def index():
                     <input type="file" id="url" name="gcode" accept=".gcode,.bgcode">
                     <label for="nickname">Print Name:</label>
                     <input type="text" id="nickname" name="nickname" placeholder="nickname">
+                    """
+                    if printLaterEnabled:
+                        body += """
+                        <label for="date">Time to print:</label>
+                        <input type="datetime-local" id="date" name="date">
+                        """
+                    body += """
                     <button type="submit">Upload</button>
                     </form>
                     """
