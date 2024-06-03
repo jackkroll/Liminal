@@ -14,31 +14,37 @@ liminal = Liminal()
 #autoUpdateTest2
 auth = HTTPBasicAuth()
 
-users = {
-    "jack": generate_password_hash("rat"),
-    "luke": generate_password_hash("rat"),
-    "katia": generate_password_hash("rat"),
-    "greysen": generate_password_hash("rat"),
-    "spencer": generate_password_hash("rat"),
-    "chris": generate_password_hash("rat"),
-    "dylan": generate_password_hash("rat"),
-    "mason": generate_password_hash("rat")
+if sys.platform == "win32":
+    cwd = "C:/Users/jackk/PycharmProjects/Liminal"
+else:
+    cwd = "/home/jack/Documents/Liminal-master"
 
-}
+
+
 @auth.verify_password
 def verify_password(username, password):
+    file = open((f"{cwd}/ref/values.json"))
+    jsonValues = json.load(file)
+    file.close()
+    users = jsonValues["students"]
     username = username.lower()
     if username in users and \
-            check_password_hash(users.get(username), password):
+            check_password_hash(users[username]["hash"], password):
         return username
 @auth.get_user_roles
-def get_user_roles(user):
-    if user in ["jack", "luke"]:
-        return ["developer"]
-    elif user in ["spencer", "katia"]:
-        return ["manager"]
-    else:
-        return ["student"]
+def get_user_roles(username):
+    #if user in ["jack", "luke"]:
+    #    return ["developer"]
+    #elif user in ["spencer", "katia"]:
+    #    return ["manager"]
+    #else:
+    #    return ["student"]
+    file = open((f"{cwd}/ref/values.json"))
+    jsonValues = json.load(file)
+    file.close()
+    users = jsonValues["students"]
+    username = username.lower()
+    return jsonValues["students"][username.capitalize()]["role"]
 
 try:
     bucket = storage.bucket()
@@ -48,10 +54,9 @@ try:
 except Exception:
     firebase = False
 
-if sys.platform == "win32":
-    cwd = "C:/Users/jackk/PycharmProjects/Liminal"
-else:
-    cwd = "/home/jack/Documents/Liminal-master"
+
+
+
 #CWD, current working directory, is the directory that the file is in
 @app.route('/')
 @auth.login_required()
