@@ -23,7 +23,7 @@ else:
 
 @auth.verify_password
 def verify_password(username, password):
-    file = open((f"{cwd}/ref/values.json"))
+    file = open((f"{cwd}/ref/config.json"))
     jsonValues = json.load(file)
     file.close()
     users = jsonValues["students"]
@@ -39,7 +39,7 @@ def get_user_roles(username):
     #    return ["manager"]
     #else:
     #    return ["student"]
-    file = open((f"{cwd}/ref/values.json"))
+    file = open((f"{cwd}/ref/config.json"))
     jsonValues = json.load(file)
     file.close()
     users = jsonValues["students"]
