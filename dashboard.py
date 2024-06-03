@@ -29,7 +29,7 @@ def verify_password(username, password):
     users = jsonValues["students"]
     username = username.lower()
     if username in users and \
-            check_password_hash(users[username]["hash"], password):
+            check_password_hash(generate_password_hash(users[username]["hash"]), password):
         return username
 @auth.get_user_roles
 def get_user_roles(username):
