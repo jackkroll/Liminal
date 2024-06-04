@@ -28,8 +28,9 @@ def verify_password(username, password):
     file.close()
     users = jsonValues["students"]
     username = username.lower()
-    if users[username.capitalize()]["hash"] == password:
-        return username
+    if username.capitalize in users:
+        if users[username.capitalize()]["hash"] == password:
+            return username
     return username
 
 @auth.get_user_roles
