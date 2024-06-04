@@ -46,7 +46,10 @@ def get_user_roles(username):
     file.close()
     users = jsonValues["students"]
     username = username.lower()
-    return jsonValues["students"][username.capitalize()]["role"]
+    if username.capitalize() in users:
+        return users[username.capitalize()]["role"]
+    else:
+        return "student"
 
 try:
     bucket = storage.bucket()
