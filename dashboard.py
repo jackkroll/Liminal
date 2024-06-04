@@ -27,11 +27,11 @@ def verify_password(username, password):
     jsonValues = json.load(file)
     file.close()
     users = jsonValues["students"]
-    username = username.lower()
+    usernameLower = username.lower()
     if username.capitalize in users:
-        if users[username.capitalize()]["hash"] == password:
-            return True
-    return True
+        if users[usernameLower.capitalize()]["hash"] == password:
+            return username
+    return username
 
 @auth.get_user_roles
 def get_user_roles(username):
