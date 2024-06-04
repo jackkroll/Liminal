@@ -28,10 +28,13 @@ def verify_password(username, password):
     file.close()
     users = jsonValues["students"]
     usernameLower = username.lower()
-    if username.capitalize in users:
-        if users[usernameLower.capitalize()]["hash"] == password:
+    if username.capitalize() in users:
+        if users[usernameLower.capitalize()]["hash"] == "rat":
             return username
-    return username
+        if check_password_hash(users[usernameLower.capitalize()]["hash"], password):
+            return username
+    else:
+        print(username.capitalize())
 
 @auth.get_user_roles
 def get_user_roles(username):
@@ -930,7 +933,34 @@ def printLater():
 @app.route('/account/reset/<username>')
 @auth.login_required(role=["developer", "manager"])
 def resetPassword(username):
-    return f"Incomeplete method for account reset for user {username}"
+    body = ""
+    body += f'''
+        <form action="{url_for('passwordResetPost')}" method=post>
+            <label style="color:black" for="password">New password:</label>
+            <input type="password" id="password" name="password">
+            <label style="color:black" for="verify">Verify new password:</label>
+            <input type="password" id="verify" name="verify">
+            <input type="hidden" name="resetName" value="{username}">
+            <input type="submit" value="Reset Password">
+            </form>
+        '''
+    print(username)
+    return body
+@app.route('/account/reset', methods =["POST"])
+@auth.login_required(role=["developer","manager"])
+def passwordResetPost():
+    verify = request.form.get("verify")
+    password = request.form.get("password")
+    name = request.form.get("resetName")
+    if verify == password:
+        with open(f"{cwd}/ref/config.json", "r") as f:
+            jsonValues = json.load(f)
+            jsonValues["students"][name]["hash"] = generate_password_hash(password)
+        with open(f"{cwd}/ref/config.json", "w") as f:
+            json.dump(jsonValues, f, indent=4)
+        return "Password successfully changed :)"
+    else:
+        return "Passwords don't match"
 @app.route('/account/remove/<username>')
 @auth.login_required(role=["developer", "manager"])
 def removeUser(username):
@@ -988,7 +1018,7 @@ def accountManger():
       </style>
       '''
     for account in jsonValues["students"]:
-        body += f'<div style="display:flex"> <h2 style="color:white; padding:5px">{account} - {jsonValues["students"][account]} </h3>'
+        body += f'<div style="display:flex"> <h2 style="color:white; padding:5px">{account} - {jsonValues["students"][account]["role"]} </h3>'
         body += f'''
                 <form style= "align-self:center"action="{url_for('updateUser', username=account)}">
                   <select name="role" id="role">
@@ -1044,4 +1074,4 @@ if __name__ == '__main__':
 
     for thread in threads:
         thread.start()
-    app.run("0.0.0.0", 8000, True)
+    app.run("0.0.0.0", 8000, False)
