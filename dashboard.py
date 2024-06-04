@@ -30,8 +30,8 @@ def verify_password(username, password):
     username = username.lower()
     if username.capitalize in users:
         if users[username.capitalize()]["hash"] == password:
-            return username
-    return username
+            return True
+    return True
 
 @auth.get_user_roles
 def get_user_roles(username):
