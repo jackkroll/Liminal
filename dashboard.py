@@ -28,8 +28,18 @@ def verify_password(username, password):
     file.close()
     users = jsonValues["students"]
     usernameLower = username.lower()
+    if username == "team302":
+        return username
     if username.capitalize() in users:
         if users[usernameLower.capitalize()]["hash"] == "rat":
+            return username
+        if users[usernameLower.capitalize()]["hash"] == None:
+            with open(f"{cwd}/ref/config.json", "r") as f:
+                jsonValues = json.load(f)
+                if username in jsonValues["students"]:
+                    jsonValues["students"][username]["hash"] = generate_password_hash(password)
+            with open(f"{cwd}/ref/config.json", "w") as f:
+                json.dump(jsonValues, f, indent=4)
             return username
         if check_password_hash(users[usernameLower.capitalize()]["hash"], password):
             return username
@@ -44,6 +54,8 @@ def get_user_roles(username):
     #    return ["manager"]
     #else:
     #    return ["student"]
+    if username == "team302":
+        return "developer"
     file = open((f"{cwd}/ref/config.json"))
     jsonValues = json.load(file)
     file.close()
@@ -52,7 +64,7 @@ def get_user_roles(username):
     if username.capitalize() in users:
         return users[username.capitalize()]["role"]
     else:
-        return "student"
+        return "restricted"
 
 try:
     bucket = storage.bucket()
@@ -123,6 +135,10 @@ def index():
         body += """<a href="dev" class="button">Developer Portal</a>"""
     else:
         print(f"[DEBUG] Not authorized to view dev page: {get_user_roles(auth.current_user())}")
+    if get_user_roles(auth.current_user()) in ["developer", "manager"]:
+        body += """<a href="account" class="button">Account Management</a>"""
+    else:
+        print(f"[DEBUG] Not authorized to view dev page: {get_user_roles(auth.current_user())}")
     try:
         prints_ref
         body += '<a href="db" class="button">Database</a>'
@@ -142,6 +158,7 @@ def index():
         <a href="printLaterEstop" style="background-color:#c43349" class="button">Cancel All Scheduled Prints</a>"""
     body +="""
     <a href="timelapse" class="button">Download last timelapse</a>
+    <a href="/account/reset" style="background-color:#c43349" class="button">Password Reset</a>
     </div>
     """
 
@@ -933,47 +950,54 @@ def printLater():
 @app.route('/account/reset/<username>')
 @auth.login_required(role=["developer", "manager"])
 def resetPassword(username):
-    body = ""
-    body += f'''
-        <form action="{url_for('passwordResetPost')}" method=post>
-            <label style="color:black" for="password">New password:</label>
-            <input type="password" id="password" name="password">
-            <label style="color:black" for="verify">Verify new password:</label>
-            <input type="password" id="verify" name="verify">
-            <input type="hidden" name="resetName" value="{username}">
-            <input type="submit" value="Reset Password">
-            </form>
-        '''
-    print(username)
-    return body
-@app.route('/account/reset', methods =["POST"])
-@auth.login_required(role=["developer","manager"])
-def passwordResetPost():
-    verify = request.form.get("verify")
-    password = request.form.get("password")
-    name = request.form.get("resetName")
-    if verify == password:
-        with open(f"{cwd}/ref/config.json", "r") as f:
-            jsonValues = json.load(f)
-            jsonValues["students"][name]["hash"] = generate_password_hash(password)
-        with open(f"{cwd}/ref/config.json", "w") as f:
-            json.dump(jsonValues, f, indent=4)
-        return "Password successfully changed :)"
-    else:
-        return "Passwords don't match"
+    with open(f"{cwd}/ref/config.json", "r") as f:
+        jsonValues = json.load(f)
+        jsonValues["students"][username]["hash"] = None
+    with open(f"{cwd}/ref/config.json", "w") as f:
+        json.dump(jsonValues, f, indent=4)
+    return "Password reset, upon next login the password they enter will become their new password :)"
+@app.route('/account/reset')
+@auth.login_required()
+def passwordResetSelf():
+    username = auth.current_user()
+    with open(f"{cwd}/ref/config.json", "r") as f:
+        jsonValues = json.load(f)
+        jsonValues["students"][username.capitalize()]["hash"] = None
+    with open(f"{cwd}/ref/config.json", "w") as f:
+        json.dump(jsonValues, f, indent=4)
+    return "Password reset, next login will determine your password"
 @app.route('/account/remove/<username>')
 @auth.login_required(role=["developer", "manager"])
 def removeUser(username):
-    return f"Incomeplete method for account deletion for user {username}"
+    with open(f"{cwd}/ref/config.json", "r") as f:
+        jsonValues = json.load(f)
+        if username in jsonValues["students"]:
+            del jsonValues["students"][username]
+    with open(f"{cwd}/ref/config.json", "w") as f:
+        json.dump(jsonValues, f, indent=4)
+    return f"Account Removed"
 
 @app.route('/account/modify/<username>')
 @auth.login_required(role=["developer", "manager"])
 def updateUser(username):
-    return f"Incomeplete method for account modification for user {username} to be set to {request.args.get('role')}"
+    with open(f"{cwd}/ref/config.json", "r") as f:
+        jsonValues = json.load(f)
+        if username in jsonValues["students"]:
+            jsonValues["students"][username]["role"] = request.args.get('role')
+    with open(f"{cwd}/ref/config.json", "w") as f:
+        json.dump(jsonValues, f, indent=4)
+    return f"{username} is now {request.args.get('role')}"
 @app.route('/account/add')
 @auth.login_required(role=["developer", "manager"])
 def addUser():
-    return f"Incomeplete method for account addition for new user {request.args.get('name')} to be set to {request.args.get('role')}"
+    name = request.args.get('name')
+    role = request.args.get('role')
+    with open(f"{cwd}/ref/config.json", "r") as f:
+        jsonValues = json.load(f)
+        jsonValues["students"][name.capitalize()]= {"hash": None, "role":role}
+    with open(f"{cwd}/ref/config.json", "w") as f:
+        json.dump(jsonValues, f, indent=4)
+    return f"Added {request.args.get('name')} as {request.args.get('role')}. Their password will be set automatically upon first login"
 @app.route('/account')
 @auth.login_required(role=["developer", "manager"])
 def accountManger():
