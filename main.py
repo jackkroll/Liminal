@@ -465,7 +465,7 @@ class PrintLater():
         self.nickname = nickname
         self.bgcode = bgcode
         self.preheating = False
-        if self.type == "Mk4":
+        if self.type == "MK4":
             self.printer.upload(self.fileContents, self.nickname, self.bgcode, False)
         else:
             self.printer.printer.upload(file=(self.nickname + ".gcode", self.fileContents), location="local", print=False)
@@ -482,7 +482,7 @@ class PrintLater():
             self.preheating = True
             print("[NOTICE] Could not preheat due to serial connection not available on Mk4, will print in 5 minutes if able")
     def ready2print(self):
-        if self.type == "Mk4":
+        if self.type == "MK4":
             self.printer.refreshData()
             if self.printer.state.lower() not in ["printing", "paused"]:
                 if self.printer.printFileOnUSB(self.nickname, self.bgcode):
