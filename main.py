@@ -205,7 +205,7 @@ class Mk4Printer():
             path = nickname + ".bgcode"
         else:
             path = nickname + ".gcode"
-        response = requests.put(f"http://{self.ip}/api/v1/files/{storage}/{path}")
+        response = requests.post(f"http://{self.ip}/api/v1/files/{storage}/{path}")
         return response.ok
 
     def transferStatus(self):
