@@ -1055,7 +1055,10 @@ def accountManger():
                   <input type="submit" value="Update Role">
                 </form>
                 '''
-        body += f'<a href="{url_for("resetPassword", username = account)}" class="interactionButton" style = "background-color:orange">Reset Password</a>'
+        if jsonValues["students"][account]["hash"] != None:
+            body += f'<a href="{url_for("resetPassword", username = account)}" class="interactionButton" style = "background-color:orange">Reset Password</a>'
+        else:
+            body += f'<a class="interactionButton">Password Awaiting Reset by User</a>'
         body += f'<a href="{url_for("removeUser", username = account)}" class="interactionButton" style = "background-color:#c43349">Remove User</a>'
         body += '</div>'
     #Add new account
