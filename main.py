@@ -11,6 +11,8 @@ import numpy as np
 
 if sys.platform == "win32":
     cwd = "C:/Users/jackk/PycharmProjects/Liminal"
+elif sys.platform == "darwin":
+    cwd = "/Users/jack/PycharmProjects/Liminal"
 else:
     cwd = "/home/jack/Documents/Liminal-master"
 try:
@@ -199,13 +201,16 @@ class Mk4Printer():
         response = requests.put(f"http://{self.ip}/api/v1/files/{storage}/{path}", headers=headers, data=fileTxt)
         #print(response.text)
         return True
-    def printFileOnUSB(self, nickname,bgcode = False, storage = "USB"):
+    def printFileOnUSB(self, nickname,bgcode = False, storage = "usb"):
         headers = {"X-API-KEY": self.key, "Accept-Language": "en-US", "Accept": "application/json"}
         if bgcode:
             path = nickname + ".bgcode"
         else:
             path = nickname + ".gcode"
-        response = requests.post(f"http://{self.ip}/api/v1/files/{storage}/{path}")
+
+        url = f"http://{self.ip}/api/v1/files/{storage}/{path}"
+        response = requests.post(url, headers=headers)
+        print(response.text)
         return response.ok
 
     def transferStatus(self):

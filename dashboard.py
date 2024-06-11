@@ -16,6 +16,8 @@ auth = HTTPBasicAuth()
 
 if sys.platform == "win32":
     cwd = "C:/Users/jackk/PycharmProjects/Liminal"
+elif sys.platform == "darwin":
+    cwd = "/Users/jack/PycharmProjects/Liminal"
 else:
     cwd = "/home/jack/Documents/Liminal-master"
 
@@ -260,7 +262,7 @@ def index():
                 print(f"[ERROR] Error refreshing data when displaying dashboard for {printer.nickname}")
             else:
                 body += '<div style="display:flex;">'
-                body += f'<h1 class="printerTitle"><a href = http://{printer.ip};style="color:{liminal.systemColor}">{printer.nickname}</a> </h1>'
+                body += f'<h1 class="printerTitle"><a href = "http://{printer.ip}" style="color:{liminal.systemColor}">{printer.nickname}</a> </h1>'
                 if printer.serial != None:
                     if printer.fetchNozzleTemp() >= 200:
                         body += f'''
