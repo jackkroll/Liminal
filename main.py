@@ -56,7 +56,6 @@ class IndividualPrint():
              'w', 'x', 'y', 'z']
             for i in range(3):
                 uuid += random.choice(letters).upper()
-
             current_year = datetime.now().year
             two_letter_year = str(current_year)[2:]
             uuid += two_letter_year
@@ -506,6 +505,14 @@ class PrintLater():
             else:
                 print(f"[WARNING] Standing down from scheduled print on {self.printer.nickname} due to current print")
 
+class Reminder():
+    def __init__(self, title, body, interval, lastDate, groups):
+        self.title = title
+        self.body = body
+        self.interval = interval
+        self.lastDate = lastDate
+        self.groups = groups
+
 class Liminal():
 
     def __init__(self):
@@ -516,6 +523,8 @@ class Liminal():
         self.accounts = list(self.config["students"].keys())
         self.cameras = []
         self.systemColor = "DodgerBlue"
+        self.reminders = []
+        self.groups = ["restricted", "student", "manager", "developer"]
         initalized = -1
         for i in range (10):
             initalized+=1
@@ -586,6 +595,11 @@ class Liminal():
         print(f"[INFO] The system IP address is: {self.ipAddress}")
         for printer in self.printers:
             printer.displayMSG(f"LMNL: {self.ipAddress}")
+        if "reminders" in self.config:
+            for reminder in self.config["reminders"]:
+                rmdrJs = self.config["reminders"][reminder]
+                #title, body, interval, startDate, groups
+                self.reminders.append(Reminder(reminder, rmdrJs["body"], timedelta(seconds = rmdrJs["interval"]), datetime.fromtimestamp(rmdrJs["lastDate"]), rmdrJs["groups"]))
 
 
 

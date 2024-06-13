@@ -1084,6 +1084,87 @@ def accountManger():
 def printLaterEstop():
     liminal.scheduledPrints = []
     return "Removed all scheduled prints"
+@app.route('/reminders', methods = ["GET"])
+@auth.login_required()
+def reminderMGMT():
+    body = "<h1>Reminder Management</h1>"
+    for reminder in liminal.reminders:
+        body += f'''
+        <h3>{reminder.title} - {reminder.body}<h3>
+        <h3>Next Date: {(reminder.lastDate + reminder.interval).strftime("%d %b %Y")}
+        <h3>Interval: {reminder.interval.days} days
+        <h3> Visible to {" ,".join(reminder.groups)}
+        <br>
+        '''
+    if len(liminal.reminders) == 0:
+        body += "<h3>No reminders added :(</h3>"
+
+    body += '<h1 style = "color:green">Create New Reminder:</h1>'
+    body += f'''
+        <form action="{url_for('reminderAdd')}">
+            <label for="title">Reminder Title:</label>
+            <input type="text" id="title" name="title">
+                
+            <label for="body">Reminder Body:</label>
+            <input type="text" id="body" name="body">
+            '''
+    body += "<p>Select the roles this reminder applies to:</p>"
+    for role in liminal.groups:
+        body += f'''
+                <input type="radio" id="{role}" name="{role}">
+                <label for="{role}"> {role} </label>
+        '''
+
+    body += '''
+            <label for="lastDate">Reminder Start Date:</label>
+            <input type="datetime-local" id="lastDate" name="lastDate">
+            
+            <label for="interval">Reminder Interval Date:</label>
+            <input type="datetime-local" id="interval" name="interval">
+            <p>The distance between the start date and the interval date will be the set interval</p>
+            
+            <input type="submit" value="Create Reminder">
+            </form>
+        '''
+    return body
+@app.route("/reminders/add", methods =["GET"])
+@auth.login_required()
+def reminderAdd():
+    title = request.args.get('title')
+    if title == "":
+        title = "Untitled"
+    body = request.args.get('body')
+    format = "%Y-%m-%dT%H:%M"
+    lastDate = datetime.strptime(request.args.get("lastDate"), format)
+    nextDate = datetime.strptime(request.args.get("interval"), format)
+    interval = (nextDate - lastDate)
+    print(interval)
+    print(interval.total_seconds())
+    groups = []
+    for role in liminal.groups:
+        if request.args.get(role) == "on":
+            groups.append(role)
+    if len(groups) == 0:
+        groups = ["student"]
+
+    with open(f"{cwd}/ref/config.json", "r") as f:
+        jsonValues = json.load(f)
+        newReminder = {
+            "body": body,
+            "lastDate": time.mktime(lastDate.timetuple()),
+            "interval": interval.total_seconds(),
+            "groups": groups
+        }
+        if "reminders" not in jsonValues:
+            jsonValues["reminders"] = {}
+        jsonValues["reminders"][title] = newReminder
+
+    with open(f"{cwd}/ref/config.json", "w") as f:
+        json.dump(jsonValues, f, indent=4)
+    return "added?"
+
+
+
 
 
 @auth.error_handler

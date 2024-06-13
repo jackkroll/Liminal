@@ -6,22 +6,31 @@ from firebase_admin import credentials, initialize_app, storage
 from datetime import datetime
 app = Flask(__name__)
 thing = 5
+notificationTitle = "Printer Maintenance"
+notificationBody = "Please consult the manual :)"
+alertType = "danger"
+showNotif = True
 @app.route("/", methods=["GET"])
 def home():
-    body = f'''<form action="{url_for("test")}"; method = post>
-  <label for="date">Request:</label>
-  <input type="datetime-local" id="date" name="date">
-  <input type="submit">
-</form>
-'''
+    body = '''<head>
+    <link href=
+"https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+    <script src=
+"https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js">
+    </script>
+</head>'''
+    if showNotif:
+        body += f'''
+        <div class="alert alert-{alertType} alert-dismissible" role="alert">
+        <strong>{notificationTitle}</strong> {notificationBody}
+        <button type="button" class="btn-close" 
+          data-bs-dismiss="alert"
+          aria-label="Close">
+        </button>
+        </div>
+        '''
     return body
-@app.route("/flip", methods = ["POST"])
-def test():
-    print(request.form.get("date"))
-    format = "%Y-%m-%dT%H:%M"
-    date = datetime.strptime(request.form.get("date"),format)
-
-    return 'yea'
 
 if __name__ == '__main__':
     app.run("0.0.0.0", 8000, True)
