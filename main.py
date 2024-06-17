@@ -12,7 +12,7 @@ import numpy as np
 if sys.platform == "win32":
     cwd = "C:/Users/jackk/PycharmProjects/Liminal"
 elif sys.platform == "darwin":
-    cwd = "/Users/jack/PycharmProjects/Liminal"
+    cwd = "/Users/jackkroll/PycharmProjects/Liminal"
 else:
     cwd = "/home/jack/Documents/Liminal-master"
 try:

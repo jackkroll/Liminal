@@ -10,21 +10,31 @@ from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-liminal = Liminal()
+
+
 #autoUpdateTest2
 auth = HTTPBasicAuth()
+
 
 if sys.platform == "win32":
     cwd = "C:/Users/jackk/PycharmProjects/Liminal"
 elif sys.platform == "darwin":
-    cwd = "/Users/jack/PycharmProjects/Liminal"
+    cwd = "/Users/jackkroll/PycharmProjects/Liminal"
 else:
     cwd = "/home/jack/Documents/Liminal-master"
+if os.path.exists(f"{cwd}/ref/config.json"):
+    liminal = Liminal()
+    configExists = True
+else:
+    configExists = False
 
 
 
 @auth.verify_password
 def verify_password(username, password):
+    if not configExists:
+        return username
+
     file = open((f"{cwd}/ref/config.json"))
     jsonValues = json.load(file)
     file.close()
@@ -78,14 +88,62 @@ except Exception:
 
 
 
+@app.route('/startup')
+def startup():
+    if not configExists:
+        body = "<h1>Welcome to the print interface startup!</h1>"
+        body += "<h3>This page is shown because you do not have a configuration file, which is required to operate. This page will help you create that :)</h3>"
+        body += "<p>Setup will guide you through a variety of items that enable the program to operate including..</p>"
+        body += '''
+        <ul>
+        <li>Octoprint based printers</li>
+        <li>Prusa Mk4 Prusalink printers</li>
+        <li>Accounts</li>
+        </ul>
+        '''
+        body += "<h1>Interrupting this process could lead to problems, please go through this setup in its entirety</h1>"
 
+        return body
+    else:
+        return "Config Exists, startup not accessible"
+@app.route('/startup/printer')
+def setupPrinter():
+    if not configExists:
+        body = "<h1>This page sets up the printers you'll use. You can always add more later!</h1>"
+
+        return body
+    else:
+        return "Config Exists, startup not accessible"
+@app.route('/startup/mk3')
+def setupPrinterMk3():
+    if not configExists:
+        body = "<h1>This page sets up the printers</h1>"
+
+        return body
+    else:
+        return "Config Exists, startup not accessible"
+@app.route('/startup/mk4')
+def setupPrinterMk4():
+    if not configExists:
+        body = "<h1>This page sets up the printers</h1>"
+
+        return body
+    else:
+        return "Config Exists, startup not accessible"
+@app.route('/startup/students')
+def setupStudentAccounts():
+    if not configExists:
+        body = "<h1>This page sets up the printers</h1>"
+
+        return body
+    else:
+        return "Config Exists, startup not accessible"
 #CWD, current working directory, is the directory that the file is in
 @app.route('/')
 @auth.login_required()
 def index():
-    file = open((f"{cwd}/ref/values.json"))
-    jsonValues = json.load(file)
-    file.close()
+    if not configExists:
+        return redirect(url_for("startup"))
     if request.args.get("later") == "true":
         printLaterEnabled = True
     else:
@@ -93,7 +151,9 @@ def index():
     print(printLaterEnabled)
     addedPrinters = 0
     file =open((f"{cwd}/ref/config.json"))
-    config = json.load(file)
+    jsonValues = json.load(file)
+    if "printersDown" in jsonValues.keys():
+        jsonValues["printersDown"] = []
     file.close()
     body = "<html><body style = background-color:#1f1f1f>"
     body += f'''
@@ -1172,15 +1232,16 @@ def auth_error(status):
     return "You don't have access to this page. You likely don't need it. These pages are often restricted to leads and developers as they contain important database management tools, system configuration,account management, and debug information. If you think this is a mistake, talk to a developer or lead", status
 if __name__ == '__main__':
     threads = []
-    for camera in liminal.cameras:
-        #Camera buffer
-        camThread = threading.Thread(target=camera.backgroundLogger)
-        threads.append(camThread)
-        #Timelapse logger
-        camThread = threading.Thread(target=camera.timelapseLogger)
-        threads.append(camThread)
+    if configExists:
+        for camera in liminal.cameras:
+            #Camera buffer
+            camThread = threading.Thread(target=camera.backgroundLogger)
+            threads.append(camThread)
+            #Timelapse logger
+            camThread = threading.Thread(target=camera.timelapseLogger)
+            threads.append(camThread)
 
-    threads.append(threading.Thread(target=liminal.printWatcher))
+        threads.append(threading.Thread(target=liminal.printWatcher))
 
     for thread in threads:
         thread.start()
