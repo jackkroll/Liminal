@@ -88,62 +88,13 @@ except Exception:
 
 
 
-@app.route('/startup')
-def startup():
-    if not configExists:
-        body = "<h1>Welcome to the print interface startup!</h1>"
-        body += "<h3>This page is shown because you do not have a configuration file, which is required to operate. This page will help you create that :)</h3>"
-        body += "<p>Setup will guide you through a variety of items that enable the program to operate including..</p>"
-        body += '''
-        <ul>
-        <li>Octoprint based printers</li>
-        <li>Prusa Mk4 Prusalink printers</li>
-        <li>Accounts</li>
-        </ul>
-        '''
-        body += "<h1>Interrupting this process could lead to problems, please go through this setup in its entirety</h1>"
 
-        return body
-    else:
-        return "Config Exists, startup not accessible"
-@app.route('/startup/printer')
-def setupPrinter():
-    if not configExists:
-        body = "<h1>This page sets up the printers you'll use. You can always add more later!</h1>"
-
-        return body
-    else:
-        return "Config Exists, startup not accessible"
-@app.route('/startup/mk3')
-def setupPrinterMk3():
-    if not configExists:
-        body = "<h1>This page sets up the printers</h1>"
-
-        return body
-    else:
-        return "Config Exists, startup not accessible"
-@app.route('/startup/mk4')
-def setupPrinterMk4():
-    if not configExists:
-        body = "<h1>This page sets up the printers</h1>"
-
-        return body
-    else:
-        return "Config Exists, startup not accessible"
-@app.route('/startup/students')
-def setupStudentAccounts():
-    if not configExists:
-        body = "<h1>This page sets up the printers</h1>"
-
-        return body
-    else:
-        return "Config Exists, startup not accessible"
 #CWD, current working directory, is the directory that the file is in
 @app.route('/')
 @auth.login_required()
 def index():
     if not configExists:
-        return redirect(url_for("startup"))
+        return redirect(url_for("setupPrinters"))
     if request.args.get("later") == "true":
         printLaterEnabled = True
     else:
@@ -1222,6 +1173,105 @@ def reminderAdd():
     with open(f"{cwd}/ref/config.json", "w") as f:
         json.dump(jsonValues, f, indent=4)
     return "added?"
+
+@app.route('/setup/printers', methods = ["GET", "POST"])
+def setupPrinters():
+    if request.method.lower() == "get":
+        body = f'''
+        <h1>Add Printer</h1>
+        <form method="post">
+            <label for="">Printer Nickname:</label>
+            <input type="text" id="nickname" name="nickname">
+            <br>
+            <label for="ip">IP Address:</label>
+            <input type="text" id="ip" name="ip">
+            <br>
+            <label for="apiKey">API Key:</label>
+            <input type="text" id="apiKey" name="apiKey">
+            <br>
+            <label for="printer">Printer Type:</label>
+            <br>
+            <label for="mk3">Mk3S (Octoprint)</label>
+            <input type="radio" id="mk3" name="printer" value="mk3">
+            <br>
+            <label for="mk4">Mk4 (PrusaConnect)</label>
+            <input type="radio" id="mk4" name="printer" value="mk4">
+            <br>
+            <label for="prefix">Two Character Prefix:</label>
+            <input type="text" id="prefix" name="prefix">
+            <br>
+            <input type="hidden" id="final" value="false" name="final">
+            <input type="submit" value="Add printer">
+        </form>
+        '''
+        return body
+    elif request.method.lower() == "post" and request.form.get("final").lower() == "false":
+        body = ""
+        nickname = request.form.get("nickname")
+        ipAddr = request.form.get("ip")
+        if not ipAddr.startswith("http://") or not ipAddr.startswith("https://"):
+            ipAddr = "http://" + ipAddr
+        apiKey = request.form.get("apiKey")
+        isMk3 = request.form.get("printer").lower() == "mk3"
+        prefix = request.form.get("prefix")
+        if isMk3:
+            try:
+                req = requests.get(f'{ipAddr}/api/printer',
+                                   headers={"X-API-KEY": f'{apiKey}'})
+                body += f'<h3 style="color:green"> {nickname} is reachable via HTTP</h3>'
+                octoprint = True
+                if not req.ok:
+                    body += f'<h3 style="color:orange"> {nickname} is not operational on Octoprint </h3>'
+                else:
+                    if not req.json()["state"]["flags"]["operational"]:
+                        body += f'<h3 style="color:orange"> {nickname} is not operational on Octoprint via flags</h3>'
+                    else:
+                        body += f'<h3 style="color:green"> {nickname} is operational via Octoprint</h3>'
+            except Exception as e:
+                print(e)
+                octoprint = False
+                body += f'<h3 style="color:red"> {nickname} is not reachable via HTTP</h3>'
+        else:
+            try:
+                req = requests.get(f'{ipAddr}/api/v1/status',
+                                   headers={"X-API-KEY": f'{apiKey}'})
+
+                body += f'<h3 style="color:green"> {nickname} is reachable via HTTP</h3>'
+                if req.ok:
+                    body += f'<h3 style="color:green"> {nickname} API Key is functional</h3>'
+                else:
+                    body += f'<h3 style="color:red"> {nickname} API Key is NOT functional</h3>'
+            except Exception as e:
+                print(e)
+                body += f'<h3 style="color:red"> {nickname} is not reachable via HTTP</h3>'
+        body += f'''
+        <form method="post">
+            <input type="hidden" id="nickname" value="{nickname}" name="nickname">
+            <input type="hidden" id="ip" value="{ipAddr}" name="ip">
+            <input type="hidden" id="apiKey" value="{apiKey}" name="apiKey">
+            <input type="hidden" id="{'mk3' if isMk3 else 'mk4'}" name="printer" value="{'mk3' if isMk3 else 'mk4'}">
+            <input type="hidden" id="prefix" value="{prefix}"name="prefix">
+            <input type="hidden" id="final" value="true" name="final">
+            <input type="submit" value="Confirm addition">
+        </form>
+        '''
+        return body
+    elif request.method.lower() == "post" and request.form.get("final").lower() == "true":
+        nickname = request.form.get("nickname")
+        ipAddr = request.form.get("ip")
+        if not ipAddr.startswith("http://") or not ipAddr.startswith("https://"):
+            ipAddr = "http://" + ipAddr
+        apiKey = request.form.get("apiKey")
+        isMk3 = request.form.get("printer").lower() == "mk3"
+        prefix = request.form.get("prefix")
+        jsonAddition = {
+            f'{nickname}' : {
+            "ipAddress" if isMk3 else "Mk4IPAddress": apiKey,
+            "apiKey": apiKey,
+            "prefix":prefix
+            }
+        }
+        return jsonAddition
 
 
 
