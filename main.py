@@ -12,7 +12,7 @@ import numpy as np
 if sys.platform == "win32":
     cwd = "C:/Users/jackk/PycharmProjects/Liminal"
 elif sys.platform == "darwin":
-    cwd = "/Users/jack/PycharmProjects/Liminal"
+    cwd = "/Users/jackkroll/PycharmProjects/Liminal"
 else:
     cwd = "/home/jack/Documents/Liminal-master"
 try:
@@ -520,7 +520,10 @@ class Liminal():
         self.printers = []
         self.MK4Printers = []
         self.scheduledPrints = []
-        self.accounts = list(self.config["students"].keys())
+        try:
+            self.accounts = list(self.config["students"].keys())
+        except KeyError:
+            self.accounts =[]
         self.cameras = []
         self.systemColor = "DodgerBlue"
         self.reminders = []
