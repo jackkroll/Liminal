@@ -544,11 +544,11 @@ def setPrinterOnline():
     if request.method == "GET":
         return redirect(url_for("setPrinterStatus"))
     else:
-        with open(f"{cwd}/ref/values.json", "r") as f:
+        with open(f"{cwd}/ref/config.json", "r") as f:
             setOnline = request.form.get("printer")
             jsonValues = json.load(f)
             jsonValues["printersDown"].remove(setOnline)
-        with open(f"{cwd}/ref/values.json", "w") as f:
+        with open(f"{cwd}/ref/config.json", "w") as f:
             json.dump(jsonValues,f,indent=4)
         return redirect(url_for("setPrinterStatus"))
 
@@ -609,11 +609,11 @@ def setPrinterOffline():
     if request.method == "GET":
         return redirect(url_for("setPrinterStatus"))
     else:
-        with open(f"{cwd}/ref/values.json", "r") as f:
+        with open(f"{cwd}/ref/config.json", "r") as f:
             setOnline = request.form.get("printer")
             jsonValues = json.load(f)
             jsonValues["printersDown"].append(setOnline)
-        with open(f"{cwd}/ref/values.json", "w") as f:
+        with open(f"{cwd}/ref/config.json", "w") as f:
             json.dump(jsonValues, f, indent=4)
         return redirect(url_for("setPrinterStatus"))
 
@@ -737,7 +737,7 @@ def updatePrinter(printer, type):
 @app.route('/dev',methods = ["GET"])
 @auth.login_required(role="developer")
 def setPrinterStatus():
-    file = open(f"{cwd}/ref/values.json")
+    file = open(f"{cwd}/ref/config.json")
     jsonValues = json.load(file)
     file.close()
     printerOptions = []
