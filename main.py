@@ -520,7 +520,10 @@ class Liminal():
         self.printers = []
         self.MK4Printers = []
         self.scheduledPrints = []
-        self.accounts = list(self.config["students"].keys())
+        try:
+            self.accounts = list(self.config["students"].keys())
+        except KeyError:
+            self.accounts =[]
         self.cameras = []
         self.systemColor = "DodgerBlue"
         self.reminders = []

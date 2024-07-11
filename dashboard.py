@@ -34,15 +34,20 @@ else:
 def verify_password(username, password):
     if not configExists:
         return username
-
-    file = open((f"{cwd}/ref/config.json"))
+    try:
+        file = open((f"{cwd}/ref/config.json"))
+    except FileNotFoundError:
+        return username
     jsonValues = json.load(file)
     file.close()
-    users = jsonValues["students"]
+    try:
+        users = jsonValues["students"]
+    except KeyError:
+        users = None
     usernameLower = username.lower()
     if username == "team302":
         return username
-    if username.capitalize() in users:
+    if users != None and username.capitalize() in users:
         if users[usernameLower.capitalize()]["hash"] == "rat":
             return username
         if users[usernameLower.capitalize()]["hash"] == None:
@@ -94,18 +99,25 @@ except Exception:
 @auth.login_required()
 def index():
     if not configExists:
-        return redirect(url_for("setupPrinters"))
+        return redirect(url_for("setupLandingPage"))
     if request.args.get("later") == "true":
         printLaterEnabled = True
     else:
         printLaterEnabled = False
-    print(printLaterEnabled)
     addedPrinters = 0
     file =open((f"{cwd}/ref/config.json"))
     jsonValues = json.load(file)
-    if "printersDown" in jsonValues.keys():
+    if "printersDown" not in jsonValues.keys():
         jsonValues["printersDown"] = []
     file.close()
+    if "students" not in jsonValues.keys():
+        return redirect(url_for("setupLandingPage"))
+    configuredPrinters = 0
+    for value in jsonValues:
+        if "ipAddress" in jsonValues[value] or "Mk4IPAddress" in jsonValues[value]:
+            configuredPrinters += 1
+    if configuredPrinters == 0:
+        return redirect(url_for("setupLandingPage"))
     body = "<html><body style = background-color:#1f1f1f>"
     body += f'''
     <head>
@@ -322,8 +334,9 @@ def index():
                     <button type="submit">Upload</button>
                     </form>
                     """
-    if addedPrinters == 0:
-        body += f'<h3 style="color:white;">No printers available/online, consult dev menu for debugging</h3>'
+    #if addedPrinters == 0:
+    if addedPrinters != configuredPrinters and configuredPrinters != 0:
+        body += f'<{"p" if addedPrinters > 0 else "h3"} style="color:white;"><small>{addedPrinters}/{configuredPrinters} printers available, consult dev menu for debugging</h3>'
     body += "</body></html>"
 
     return body
@@ -1174,6 +1187,70 @@ def reminderAdd():
         json.dump(jsonValues, f, indent=4)
     return "added?"
 
+@app.route('/setup')
+def setupLandingPage():
+    accounts = False
+    printers = False
+    fileExists = os.path.isfile(f"{cwd}/ref/config.json")
+    if fileExists:
+        file = open((f"{cwd}/ref/config.json"))
+        jsonValues = json.load(file)
+        file.close()
+        if "students" in jsonValues:
+            accounts = True
+        for item in jsonValues:
+            if "ipAddress" in jsonValues[item] or "Mk4IPAddress" in jsonValues[item]:
+                printers = True
+                break
+    else:
+        with open(f"{cwd}/ref/config.json", "w") as outfile:
+            outfile.write("{}")
+    body = f'''
+        <h1>Setup Progress</h1>
+        <p>Root user account:{"✅" if accounts else "❌"}</p>
+        <p>1 printer added: {"✅" if printers else "❌"}</p>
+        '''
+    if not accounts:
+        body += f'<br><a href={url_for("setupRootUser")}> Click here to setup root user'
+    if not printers:
+        body += f'<br><a href={url_for("setupPrinters")}> Click here to setup a printer'
+    if accounts and printers:
+        body += f'<br><a href="/"> Let\'s get printing!'
+    return body
+
+
+@app.route('/setup/user', methods = ["GET", "POST"])
+def setupRootUser():
+    fileExists = os.path.isfile(f"{cwd}/ref/config.json")
+    if fileExists:
+        file = open((f"{cwd}/ref/config.json"))
+        jsonValues = json.load(file)
+        file.close()
+        if "students" in jsonValues:
+            return "Accounts already exist"
+    if request.method.lower() == "get":
+        body = f'''
+        <h1>Configure Root User</h1>
+        <p>This user will be set up as an admin will full access, upon setup the next time the user logs in that password will be set</p>
+        <form method="post">
+            <label for="">Username:</label>
+            <input type="text" id="name" name="name">
+            <br>
+            <input type="submit" value="Confirm user setup">
+        </form>
+        '''
+        return body
+    elif request.method.lower() == "post":
+        name = request.form.get("name")
+        with open(f"{cwd}/ref/config.json", "r") as f:
+            jsonValues = json.load(f)
+            jsonValues["students"] = {}
+            jsonValues["students"][name.capitalize()] = {"hash": None, "role": "manager"}
+        with open(f"{cwd}/ref/config.json", "w") as f:
+            json.dump(jsonValues, f, indent=4)
+        return redirect(url_for("setupLandingPage"))
+
+
 @app.route('/setup/printers', methods = ["GET", "POST"])
 def setupPrinters():
     if request.method.lower() == "get":
@@ -1264,6 +1341,7 @@ def setupPrinters():
         apiKey = request.form.get("apiKey")
         isMk3 = request.form.get("printer").lower() == "mk3"
         prefix = request.form.get("prefix")
+
         jsonAddition = {
             f'{nickname}' : {
             "ipAddress" if isMk3 else "Mk4IPAddress": apiKey,
@@ -1271,11 +1349,16 @@ def setupPrinters():
             "prefix":prefix
             }
         }
-        return jsonAddition
-
-
-
-
+        with open(f"{cwd}/ref/config.json", "r") as f:
+            jsonValues = json.load(f)
+            jsonValues[nickname] = {
+            "ipAddress" if isMk3 else "Mk4IPAddress": apiKey,
+            "apiKey": apiKey,
+            "prefix":prefix
+            }
+        with open(f"{cwd}/ref/config.json", "w") as f:
+            json.dump(jsonValues, f, indent=4)
+        return redirect(url_for("setupLandingPage"))
 
 @auth.error_handler
 def auth_error(status):
