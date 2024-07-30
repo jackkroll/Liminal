@@ -44,6 +44,7 @@ def verify_password(username, password):
         users = jsonValues["students"]
     except KeyError:
         users = None
+        return "team302"
     usernameLower = username.lower()
     if username == "team302":
         return username
@@ -547,6 +548,8 @@ def setPrinterOnline():
         with open(f"{cwd}/ref/config.json", "r") as f:
             setOnline = request.form.get("printer")
             jsonValues = json.load(f)
+            if "printersDown" not in jsonValues:
+                jsonValues["printersDown"] = []
             jsonValues["printersDown"].remove(setOnline)
         with open(f"{cwd}/ref/config.json", "w") as f:
             json.dump(jsonValues,f,indent=4)
@@ -606,12 +609,15 @@ def changeIPAddrMK4():
 @app.route('/dev/offline',methods = ["GET", "POST"])
 @auth.login_required(role="developer")
 def setPrinterOffline():
+
     if request.method == "GET":
         return redirect(url_for("setPrinterStatus"))
     else:
         with open(f"{cwd}/ref/config.json", "r") as f:
             setOnline = request.form.get("printer")
             jsonValues = json.load(f)
+            if "printersDown" not in jsonValues:
+                jsonValues["printersDown"] = []
             jsonValues["printersDown"].append(setOnline)
         with open(f"{cwd}/ref/config.json", "w") as f:
             json.dump(jsonValues, f, indent=4)
@@ -741,6 +747,8 @@ def setPrinterStatus():
     jsonValues = json.load(file)
     file.close()
     printerOptions = []
+    if "printersDown" not in jsonValues:
+        jsonValues["printersDown"] = []
     for printer in liminal.printers + liminal.MK4Printers:
         printerOptions.append(printer.nickname)
     if request.method == "GET":
