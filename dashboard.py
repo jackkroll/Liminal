@@ -66,15 +66,12 @@ def verify_password(username, password):
 
 @auth.get_user_roles
 def get_user_roles(username):
-    #if user in ["jack", "luke"]:
-    #    return ["developer"]
-    #elif user in ["spencer", "katia"]:
-    #    return ["manager"]
-    #else:
-    #    return ["student"]
     if username == "team302":
         return "developer"
-    file = open((f"{cwd}/ref/config.json"))
+    try:
+        file = open((f"{cwd}/ref/config.json"))
+    except Exception:
+        return "developer"
     jsonValues = json.load(file)
     file.close()
     users = jsonValues["students"]
@@ -159,6 +156,8 @@ def index():
     """
     if "developer" in get_user_roles(auth.current_user()):
         body += """<a href="dev" class="button">Developer Portal</a>"""
+    if "developer" in get_user_roles(auth.current_user()) or "manager" in get_user_roles(auth.current_user()):
+        body += """<a href="setup/printers" class="button">Add Printers</a>"""
     else:
         print(f"[DEBUG] Not authorized to view dev page: {get_user_roles(auth.current_user())}")
     if get_user_roles(auth.current_user()) in ["developer", "manager"]:
@@ -285,6 +284,7 @@ def index():
                     liminal.printers.remove(printer)
                 print(f"[ERROR] Error refreshing data when displaying dashboard for {printer.nickname}")
             else:
+                addedPrinters += 1
                 body += '<div style="display:flex;">'
                 body += f'<h1 class="printerTitle"><a href = "http://{printer.ip}" style="color:{liminal.systemColor}">{printer.nickname}</a> </h1>'
                 if printer.serial != None:
@@ -1260,6 +1260,7 @@ def setupRootUser():
 
 
 @app.route('/setup/printers', methods = ["GET", "POST"])
+@auth.login_required(role = ["manager", "developer"])
 def setupPrinters():
     if request.method.lower() == "get":
         body = f'''
