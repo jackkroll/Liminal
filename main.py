@@ -524,6 +524,10 @@ class Liminal():
             self.accounts = list(self.config["students"].keys())
         except KeyError:
             self.accounts =[]
+        try:
+            self.debugging = self.config["currentlyDebugging"]
+        except KeyError:
+            self.debugging = True
         self.cameras = []
         self.systemColor = "DodgerBlue"
         self.reminders = []

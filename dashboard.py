@@ -74,6 +74,8 @@ def get_user_roles(username):
         return "developer"
     jsonValues = json.load(file)
     file.close()
+    if "students" not in jsonValues:
+        return "developer"
     users = jsonValues["students"]
     username = username.lower()
     if username.capitalize() in users:
@@ -859,30 +861,32 @@ def timelapse():
         return send_file(f"Clip.mp4")
     except:
         return "Error downloading last timelapse..."
-@app.errorhandler(500)
-@auth.login_required()
-def fallback(error):
-    body = ""
-    body += f'<h1> There was an error somewhere, here is a fallback to printer URLS: </h1>'
-    for printer in liminal.printers:
-        try:
-            body += f'<h1 style="color:{liminal.systemColor};"><a href = http://{printer.url}>{printer.nickname}</a> </h1>'
-        except Exception:
-            print(f"[ERROR] Error adding printer to fallback")
-    for printer in liminal.MK4Printers:
-        try:
-            body += f'<h1 style="color:{liminal.systemColor};"><a href = http://{printer.ip}>{printer.nickname}</a> </h1>'
-        except Exception:
-            print("[ERROR] Error adding printer to falback")
-    body += f'<h1>Debug details: </h1>'
-    for printer in liminal.printers:
-        body += f'<h5>{printer.nickname}</h5>'
-    for printer in liminal.MK4Printers:
-        if printer.serial != None:
-            body += f'<h5>{printer.nickname} w/ serial</h5>'
-        else:
-            body += f'<h5>{printer.nickname} w/o serial</h5>'
-    return body
+
+if not liminal.debugging:
+    @app.errorhandler(500)
+    @auth.login_required()
+    def fallback(error):
+        body = ""
+        body += f'<h1> There was an error somewhere, here is a fallback to printer URLS: </h1>'
+        for printer in liminal.printers:
+            try:
+                body += f'<h1 style="color:{liminal.systemColor};"><a href = http://{printer.url}>{printer.nickname}</a> </h1>'
+            except Exception:
+                print(f"[ERROR] Error adding printer to fallback")
+        for printer in liminal.MK4Printers:
+            try:
+                body += f'<h1 style="color:{liminal.systemColor};"><a href = http://{printer.ip}>{printer.nickname}</a> </h1>'
+            except Exception:
+                print("[ERROR] Error adding printer to falback")
+        body += f'<h1>Debug details: </h1>'
+        for printer in liminal.printers:
+            body += f'<h5>{printer.nickname}</h5>'
+        for printer in liminal.MK4Printers:
+            if printer.serial != None:
+                body += f'<h5>{printer.nickname} w/ serial</h5>'
+            else:
+                body += f'<h5>{printer.nickname} w/o serial</h5>'
+        return body
 @app.route('/error')
 @auth.login_required()
 def troubleMakrer():
@@ -1387,4 +1391,4 @@ if __name__ == '__main__':
 
     for thread in threads:
         thread.start()
-    app.run("0.0.0.0", 8000, False)
+    app.run("0.0.0.0", 8000, liminal.debugging)
