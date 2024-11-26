@@ -1,4 +1,4 @@
-import time, asyncio, os, pytimeparse, datetime, requests, random, math,json, socket, sys, cv2, serial
+import time, asyncio, os, pytimeparse, datetime, requests, random, math,json, socket, sys, cv2, serial,nmap
 from serial.tools import list_ports
 from datetime import datetime, timedelta
 from octorest import OctoRest
@@ -520,6 +520,8 @@ class Liminal():
         self.printers = []
         self.MK4Printers = []
         self.scheduledPrints = []
+        self.possibleHosts = []
+        self.searchingForHosts = False
         try:
             self.accounts = list(self.config["students"].keys())
         except KeyError:
@@ -685,3 +687,19 @@ def parseGCODE(link):
         return [nozzleDiameter, timedelta.seconds]
     except:
         return None
+def mk3_scan(self):
+    self.searchingForHosts = True
+    scanner = nmap.PortScanner()
+
+    hardware_name = "aml-s905x-cc"
+    district_suffix = "district.lok12.org"
+    search_limit = "24"
+    target_address = hardware_name + "." + district_suffix + "/" + search_limit
+    options = "-p 80"
+    hosts = []
+    scanner.scan(target_address, arguments=options)
+    for host in scanner.all_hosts():
+        if hardware_name + "." + district_suffix == scanner[host].hostname():
+            hosts.append(host)
+    self.possibleHosts = hosts
+    return hosts
