@@ -627,23 +627,23 @@ def setPrinterOffline():
             json.dump(jsonValues, f, indent=4)
         return redirect(url_for("setPrinterStatus"))
 
-@app.route('/dev/scan')
-@auth.login_required(role="developer")
-def scanForPrinters():
-    if request.method == "GET":
-        if liminal.searchingForHosts:
-            return "Actively searching... Return soon!"
-        else:
-            if len(liminal.possibleHosts) == 0:
-                return "No possible hosts found, search not initiated, or found nothing"
-            else:
-                return liminal.possibleHosts
-@app.route('/dev/scan/start')
-@auth.login_required(role="developer")
-def startScan():
-    scanThread = threading.Thread(target=liminal.mk3_scan)
-    threads.append(scanThread)
-    return "Scan has started"
+#@app.route('/dev/scan')
+#@auth.login_required(role="developer")
+#def scanForPrinters():
+#   if request.method == "GET":
+#        if liminal.searchingForHosts:
+#            return "Actively searching... Return soon!"
+#        else:
+#            if len(liminal.possibleHosts) == 0:
+#                return "No possible hosts found, search not initiated, or found nothing"
+#            else:
+#                return liminal.possibleHosts
+#@app.route('/dev/scan/start')
+#@auth.login_required(role="developer")
+#def startScan():
+#    scanThread = threading.Thread(target=liminal.mk3_scan)
+#    threads.append(scanThread)
+#    return "Scan has started"
 
 
 
