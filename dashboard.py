@@ -1,7 +1,9 @@
 import datetime,json,random,time,string,os,sys, threading, cv2, requests
+import main
+from crypt import methods
 from threading import Thread
 
-from flask import Flask, request, send_file, redirect, url_for, Response
+from flask import Flask, request, send_file, redirect, url_for, Response, render_template
 from firebase_admin import credentials, initialize_app, storage
 from main import IndividualPrint,SinglePrinter, Liminal,PrintLater
 import firebase_admin
@@ -626,26 +628,25 @@ def setPrinterOffline():
         with open(f"{cwd}/ref/config.json", "w") as f:
             json.dump(jsonValues, f, indent=4)
         return redirect(url_for("setPrinterStatus"))
-
-#@app.route('/dev/scan')
-#@auth.login_required(role="developer")
-#def scanForPrinters():
-#   if request.method == "GET":
-#        if liminal.searchingForHosts:
-#            return "Actively searching... Return soon!"
-#        else:
-#            if len(liminal.possibleHosts) == 0:
-#                return "No possible hosts found, search not initiated, or found nothing"
-#            else:
-#                return liminal.possibleHosts
-#@app.route('/dev/scan/start')
-#@auth.login_required(role="developer")
-#def startScan():
-#    scanThread = threading.Thread(target=liminal.mk3_scan)
-#    threads.append(scanThread)
-#    return "Scan has started"
-
-
+@app.route('/dev/scan', methods = ["GET", "POST"])
+@auth.login_required(role="developer" )
+def scanForPrinter():
+    if request.method == "GET":
+        return render_template(f"portscan.html", scanning = liminal.searchingForHosts, host = liminal.possibleHosts)
+    elif request.method == "POST":
+        hardware = request.form.get("hardware")
+        suffix = request.form.get("suffix")
+        agree = request.form.get("agree")
+        if agree == "on":
+            agree = True
+        else:
+            agree = False
+        if not agree:
+            return "You did not confirm agreeing to the terms of port scanning"
+        scanThread = threading.Thread(target=liminal.portScan, args=(hardware, suffix))
+        threads.append(scanThread)
+        scanThread.start()
+        return redirect(url_for("scanForPrinter"))
 
 @app.route('/estop', methods = ["GET"])
 @auth.login_required()
@@ -911,7 +912,7 @@ if not liminal.debugging:
         return body
 @app.route('/error')
 @auth.login_required()
-def troubleMakrer():
+def troubleMaker():
     return 500
 @app.route('/camera/raw/<path:cameraNum>')
 @auth.login_required()

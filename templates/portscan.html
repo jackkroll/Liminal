@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Network Port Scan</title>
+</head>
+<body>
+<h1>Network Port Scan</h1>
+<b>Port scanning can be used it identify devices on the network remotely</b>
+{% if hosts|length > 0 %}
+<h3>Previous results:</h3>
+<ul>
+{% for host in hosts %}
+    <li>host</li>
+{% endfor %}
+</ul>
+{% endif %}
+<br>
+<a href="https://www.paloaltonetworks.com/cyberpedia/what-is-a-port-scan">Learn more</a>
+{% if scanning %}
+<h3>A network scan is currently in progress, it shouldn't take very long (less than 5 minutes)</h3>
+{% else %}
+<form method="post" enctype="multipart/form-data">
+    <label for="hardware"> Hostname: </label>
+    <input type="text" id="hardware" name="hardware" value="aml-s905x-cc">
+    <br>
+    <label for="suffix"> Domain: </label>
+    <input type="text" id="suffix" name="suffix" value="district.lok12.org">
+    <br>
+    <label for="agree"> I understand and accept to perform a port scan </label>
+    <input type="checkbox" name="agree" id="agree">
+    <br>
+    <input type="submit" value="Start Scan">
+</form>
+{% endif %}
+</body>
+</html>

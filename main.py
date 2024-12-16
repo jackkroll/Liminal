@@ -9,6 +9,8 @@ import netifaces as ni
 import cv2
 import numpy as np
 
+from sniffer import scanner, search_limit, target_address, district_suffix
+
 if sys.platform == "win32":
     cwd = "C:/Users/jackk/PycharmProjects/Liminal"
 elif sys.platform == "darwin":
@@ -648,6 +650,26 @@ class Liminal():
                     self.scheduledPrints.remove(scheduledPrint)
             time.sleep(10)
 
+    def portScan(self, hardwareName, networkSuffix):
+        if not self.searchingForHosts:
+            self.searchingForHosts = True
+            scanner = nmap.PortScanner()
+            search_limit = 24
+            port = 80
+            target_address = hardwareName + "." + networkSuffix + "/" + str(search_limit)
+            options = "-p " + str(port)
+            scanner.scan(target_address, arguments=options)
+            hosts = []
+            for host in scanner.all_hosts():
+                if hardwareName + "." + networkSuffix == scanner[host].hostname():
+                    hosts.append(host)
+            self.searchingForHosts = False
+            if len(hosts) == 0:
+                print("[OPERATIONAL] No hosts found")
+            return hosts
+        else:
+            return None
+
 
 
 
@@ -687,19 +709,5 @@ def parseGCODE(link):
         return [nozzleDiameter, timedelta.seconds]
     except:
         return None
-def mk3_scan(self):
-    self.searchingForHosts = True
-    scanner = nmap.PortScanner()
 
-    hardware_name = "aml-s905x-cc"
-    district_suffix = "district.lok12.org"
-    search_limit = "24"
-    target_address = hardware_name + "." + district_suffix + "/" + search_limit
-    options = "-p 80"
-    hosts = []
-    scanner.scan(target_address, arguments=options)
-    for host in scanner.all_hosts():
-        if hardware_name + "." + district_suffix == scanner[host].hostname():
-            hosts.append(host)
-    self.possibleHosts = hosts
-    return hosts
+
