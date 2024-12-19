@@ -1,10 +1,48 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+<div class="card" style="padding:10px">
+<img src="http://via.placeholder.com/1280x720" class="card-img-top" alt="...">
+<div class="card-title">
+<span class="h2">{{ printer.nickname }}</span>
 
-</body>
-</html>
+   <span class="badge text-bg-primary">Mk3 Printer</span>
+    <!-- Change depending on state -->
+   <span class="badge text-bg-success">{{ printer.state }}</span>
+</div>
+    <div>
+        <span class="h6">Nozzle: {{ printer.nozzleTempActual }}</span>
+        <span class="vr mx-2"></span>
+        <span class="h6">Bed: {{ printer.bedTempActual }}</span>
+    </div>
+    <hr>
+{% if printer.printing %}
+<h5 style="padding-top:10px">Job title by User</h5>
+{% if printer.state == "Paused" %}
+{% set color = "warning" %}
+{% set bar = "progress-bar" %}
+{% else %}
+{% set color = "primary" %}
+{% set bar = "progress-bar-animated" %}
+{% endif %}
+<div class="progress" role="progressbar" aria-label="Basic example" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+    <div class="progress-bar text-bg-{{color}} progress-bar-striped {{bar}}" style="width: {{ printer.progress }}%"></div>
+</div>
+<hr>
+<span>
+    <button type="button" class="btn btn-warning">Pause Print</button>
+    <button type="button" class="btn btn-danger">Stop Print</button>
+</span>
+{% else %}
+<div class="mb-3">
+  <label for="example-file-input-1" class="form-label">Upload Print Job:</label>
+  <input class="form-control" type="file" id="example-file-input-1">
+</div>
+<hr>
+<span>
+    {% if printer.nozzleTempTarget > 0 or printer.bedTempTarget > 0 %}
+    <button type="button" class="btn btn-info d-block w-100">Cooldown</button>
+    {% else %}
+    <button type="button" class="btn btn-danger d-block w-100">Preheat PLA</button>
+    {% endif %}
+</span>
+{% endif %}
+
+</div>

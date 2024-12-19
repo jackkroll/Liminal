@@ -1,4 +1,6 @@
 import time, asyncio, os, pytimeparse, datetime, requests, random, math,json, socket, sys, cv2, serial,nmap
+
+from flask import render_template
 from serial.tools import list_ports
 from datetime import datetime, timedelta
 from octorest import OctoRest
@@ -247,6 +249,12 @@ class SinglePrinter():
         self.url = url
         self.key = key
         self.state = None
+        self.nozzleTempActual = 0
+        self.bedTempActual = 0
+        self.nozzleTempTarget = 0
+        self.bedTempTarget = 0
+        self.printing = False
+        self.progress = 0
         #Idle, Printing, Offline
        #self.color = color
         try:
@@ -255,6 +263,7 @@ class SinglePrinter():
             #ipAddr = socket.gethostbyname(socket.gethostname())
             #self.printer.gcode(f"M117 {ipAddr}")
         except Exception:
+            print("[ERROR] Connection to printer could not be established")
             self.printer = None
         #self.printer.home()
         self.user = None
@@ -278,12 +287,27 @@ class SinglePrinter():
     def pause(self):
         self.printer.pause()
         return True
+    def refreshData(self):
+        self.nozzleTempActual = self.fetchNozzleTemp()["actual"]
+        self.nozzleTempTarget = self.fetchNozzleTemp()["target"]
+        self.bedTempActual = self.fetchBedTemp()["actual"]
+        self.bedTempTarget = self.fetchBedTemp()["target"]
+        self.state = self.printer.state()
+        if "printing" in self.state.lower():
+            self.printing = True
+        else:
+            self.printing = False
+        if self.printing:
+            self.progress = self.fetchProgress()
+        else:
+            self.progress = 0
     def resume(self):
         self.printer.resume()
         return True
     def updateState(self):
         state = self.printer.state
         self.state = state
+        print("state")
         return state
 
     def preheat(self):
@@ -349,7 +373,11 @@ class SinglePrinter():
             return self.printer.job_info()["progress"]["printTimeLeft"]
         else:
             return -60
-
+    def fetchProgress(self):
+        if self.printer.job_info()["progress"]["completion"] != None:
+            return int(self.printer.job_info()["progress"]["completion"])
+        else:
+            return 1
     def scheduler(self, gcode: IndividualPrint, requestedTime):
         times = []
         gaps = []
