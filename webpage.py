@@ -18,7 +18,7 @@ printers = [SinglePrinter("Home Printer", "http://octopi.local", "ZKduVdsbbh92GG
 def home():
     for printer in printers:
         printer.refreshData()
-    return render_template("dashboard.html", printers=printers)
+    return render_template("dashboard.html", printers=printers, currentUser = "yo mama")
 
 if __name__ == '__main__':
     app.run("0.0.0.0", 8080, True)

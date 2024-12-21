@@ -255,6 +255,7 @@ class SinglePrinter():
         self.bedTempTarget = 0
         self.printing = False
         self.progress = 0
+        self.paused = False
         #Idle, Printing, Offline
        #self.color = color
         try:
@@ -295,8 +296,13 @@ class SinglePrinter():
         self.state = self.printer.state()
         if "printing" in self.state.lower():
             self.printing = True
+            self.paused = False
+        elif "paus" in self.state.lower():
+            self.printing = True
+            self.paused = True
         else:
             self.printing = False
+            self.paused = False
         if self.printing:
             self.progress = self.fetchProgress()
         else:

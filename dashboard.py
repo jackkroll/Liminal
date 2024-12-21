@@ -122,6 +122,11 @@ def index():
             configuredPrinters += 1
     if configuredPrinters == 0:
         return redirect(url_for("setupLandingPage"))
+
+    for printer in liminal.printers:
+        printer.refreshData()
+    return render_template("dashboard.html", printers=liminal.printers, currentUser = auth.current_user(), role = get_user_roles(auth.current_user()))
+
     body = "<html><body style = background-color:#1f1f1f>"
     body += f'''
     <head>
@@ -373,7 +378,14 @@ def cooldown():
     for printer in liminal.printers + liminal.MK4Printers:
         if request.form.get("printer") == printer.nickname:
             printer.cooldown()
-            return True
+    return redirect(url_for("index"))
+@app.route('/stop', methods = ["POST"])
+@auth.login_required(role = ["student", "manager", "developer"])
+def stop():
+    for printer in liminal.printers + liminal.MK4Printers:
+        if request.form.get("printer") == printer.nickname:
+            printer.abort()
+    return redirect(url_for("index"))
 
 @app.route('/pause', methods = ["POST"])
 @auth.login_required(role = ["student", "manager", "developer"])
@@ -390,7 +402,7 @@ def pausePrint():
         for printer in liminal.MK4Printers:
             if request.form.get("printer") == printer.nickname:
                 printer.pause()
-
+                return redirect(url_for("index"))
 @app.route('/resume', methods = ["POST"])
 @auth.login_required(role = ["student", "manager", "developer"])
 def resumePrint():
@@ -1380,9 +1392,9 @@ def setupPrinters():
 
         jsonAddition = {
             f'{nickname}' : {
-            "ipAddress" if isMk3 else "Mk4IPAddress": apiKey,
+            "ipAddress" if isMk3 else "Mk4IPAddress": ipAddr,
             "apiKey": apiKey,
-            "prefix":prefix
+            "prefix": prefix
             }
         }
         with open(f"{cwd}/ref/config.json", "r") as f:
