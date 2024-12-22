@@ -1,6 +1,7 @@
 import time, asyncio, os, pytimeparse, datetime, requests, random, math,json, socket, sys, cv2, serial,nmap
 
 from flask import render_template
+from pyasn1.type.univ import Boolean
 from serial.tools import list_ports
 from datetime import datetime, timedelta
 from octorest import OctoRest
@@ -40,6 +41,14 @@ def make_client(url, apikey):
     except ConnectionError as ex:
         # Handle exception as you wish
         print(ex)
+
+class PrintNotification():
+    def __init__(self, text = "Lorem Ipsum", target = "all", color = "primary", userDisabled = True):
+        self.text = text
+        self.target = target
+        self.color = color
+        self.userDisabled = userDisabled
+
 class IndividualPrint():
     def __init__(self, file, creator, material, printerCode, nickname, type = "gcode"):
         self.file = file
@@ -89,6 +98,7 @@ class Mk4Printer():
         self.prefix = prefix
         self.nickname = nickname
         self.transfer = None
+        self.printing = False
         if self.portStr != None:
             try:
                 self.serial = serial.Serial('/dev/ttyACM0', baudrate=115200, timeout=5)
@@ -141,9 +151,11 @@ class Mk4Printer():
         if "job" in data:
             self.currentPrintID = data["job"]["id"]
             self.progress = data["job"]["progress"]
+            self.printing = True
         else:
             self.currentPrintID = None
             self.progress = None
+            self.printing = False
         if "transfer" in data and "progress" in data["transfer"]:
             self.transfer = data["transfer"]["progress"]
         else:
@@ -569,6 +581,7 @@ class Liminal():
         self.cameras = []
         self.systemColor = "DodgerBlue"
         self.reminders = []
+        self.notifications = [PrintNotification()]
         self.groups = ["restricted", "student", "manager", "developer"]
         initalized = -1
         for i in range (10):

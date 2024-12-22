@@ -3,24 +3,14 @@
 <div class="card-title">
 <span class="h2">{{ printer.nickname }}</span>
 
-   <span class="badge text-bg-success">Octoprint</span>
+   <span class="badge text-bg-">Prusalink</span>
     <!-- Change depending on state -->
-   {% if printer.state == "Printing" or printer.state == "Operational"%}
-   {% set color = "success" %}
-   {% elif printer.state == "Paused" or printer.state == "Pausing" %}
-   {% set color = "warning" %}
-   {% elif printer.state == "Error" %}
-   {% set color = "danger" %}
-   {% else %}
-   {% set color = "info" %}
-   {% endif %}
-   <span class="badge text-bg-{{color}}">{{ printer.state }}</span>
-
+   <span class="badge text-bg-success">{{ printer.state }}</span>
 </div>
     <div>
-        <span class="h6">Nozzle: {{ printer.nozzleTempActual }}°C</span>
+        <span class="h6">Nozzle: {{ printer.nozzleTemp}}°C</span>
         <span class="vr mx-2"></span>
-        <span class="h6">Bed: {{ printer.bedTempActual }}°C</span>
+        <span class="h6">Bed: {{ printer.bedTemp }}°C</span>
     </div>
     <hr>
 {% if printer.printing %}
@@ -59,8 +49,7 @@
 </button>
 <div style="padding-top: 10px">
 {% include "print_modal.html" %}
-
-    {% if printer.nozzleTempTarget > 0 or printer.bedTempTarget > 0 %}
+    {% if printer.nozzleTemp > 40 or printer.bedTempTarget > 40 %}
     <form action="/cooldown" method="post">
     <input type="hidden" name="printer" value="{{ printer.nickname }}">
     <button type="submit" class="btn btn-info d-block w-100">Cooldown</button>

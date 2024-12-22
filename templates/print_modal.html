@@ -1,8 +1,54 @@
-<div class="modal fade" id="submit-print" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="modal-title-2" aria-hidden="true">
+<div class="modal fade" id="determine-path" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="determine-path" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="modal-title-2">Submit Print Job</h1>
+        <h1 class="modal-title fs-5" id="determine-path-title">Select Printing Mode</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" >
+        <button type="button" style="margin-bottom:10px" class="btn btn-primary w-100 d-block" data-bs-toggle="modal" data-bs-target="#schedule-print">Schedule Print</button>
+        <button type="button" style="margin-bottom:10px" class="btn btn-primary w-100 d-block" data-bs-toggle="modal" data-bs-target="#submit-print">Print Now</button>
+      </div>
+    </div>
+    </div>
+  </div>
+
+
+<div class="modal fade" id="submit-print" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="submit-print" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="submit-print-title">Submit Print Job</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="/print" method="post" enctype="multipart/form-data">
+      <input type="hidden" name="printer" value="{{printer.nickname}}">
+      <input type="hidden" name="creator" value="{{currentUser}}">
+      <div class="modal-body">
+        <div class="container-md">
+          <div class="mb-3">
+          <label class="form-label" for="nickname-submit">Print Name</label>
+          <input type="text" class="form-control" id="nickname-submit" name="nickname" required placeholder="Print Name" required>
+          </div>
+          <div class="input-group mb-3">
+            <input class="form-control" placeholder="Print GCODE" type="file" accept=".gcode" name="gcode" required>
+          </div>
+      </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Print now on {{ printer.nickname }}</button>
+      </div>
+     </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="schedule-print" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="schedule-print" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="schedule-print-title">Submit Print Job</h1>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form action="/print" method="post">
@@ -11,19 +57,25 @@
       <div class="modal-body">
         <div class="container-md">
           <div class="mb-3">
-          <label class="form-label" for="nickname">Print Name</label>
-          <input type="text" class="form-control" id="nickname" name="nickname" required placeholder="Print Name" required>
+          <label class="form-label" for="nickname-schedule">Print Name</label>
+          <input type="text" class="form-control" id="nickname-schedule" name="nickname" placeholder="Print Name" required>
           </div>
           <div class="input-group mb-3">
-            <input class="form-control" placeholder="Print GCODE" type="file" accept=".gcode" id="url" required>
+            <input class="form-control" placeholder="Print GCODE" type="file" accept=".gcode" name="url" required>
+          </div>
+          <label class="form-label" for="nickname-schedule">Time to attempt print</label>
+          <input type="datetime-local" class="form-control" id="scheduled-time" name="nickname" required>
+          <div id="print-later-info" class="form-text">
+          As many other machines, 3D printers should never be left unattended.
           </div>
       </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="submit" class="btn btn-primary">Send to {{ printer.nickname }}</button>
+        <button type="submit" class="btn btn-primary">Schedule on {{ printer.nickname }}</button>
       </div>
      </form>
     </div>
   </div>
 </div>
+

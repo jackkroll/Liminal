@@ -9,7 +9,21 @@
 </head>
 <body>
 {% include "navbar.html" %}
+
 <div class="container-lg">
+{% for notification in notifications %}
+    {% if notification.target == "all" or notification.target == currentUser %}
+    {% if notification.userDisabled %}
+    {% set type = "alert-dismissible" %}
+    {% endif %}
+    <div class="alert alert-{{notification.color}} {{type}} fade show" style="margin-top:10px" role="alert">
+    {{notification.text}}
+    {% if notification.userDisabled %}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    {% endif %}
+    </div>
+    {% endif %}
+{% endfor %}
   <h1>Printer Dashboard</h1>
   <div class="row">
     {% for printer in printers %}

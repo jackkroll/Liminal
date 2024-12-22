@@ -125,7 +125,7 @@ def index():
 
     for printer in liminal.printers:
         printer.refreshData()
-    return render_template("dashboard.html", printers=liminal.printers, currentUser = auth.current_user(), role = get_user_roles(auth.current_user()))
+    return render_template("dashboard.html", printers=liminal.printers, currentUser = auth.current_user(), role = get_user_roles(auth.current_user()), notifications = liminal.notifications)
 
     body = "<html><body style = background-color:#1f1f1f>"
     body += f'''
@@ -506,6 +506,8 @@ def uploadPrintURL():
                     return "Your print was successfully uploaded to the printer but was not saved to the cloud."
 
                 return f"Your print was successfully uploaded and documented. The unique code for your print is: {individualPrint.uuid}"
+        return f"The requested printer \"{request.form.get('printer')}\" was not located"
+
 @app.route('/db')
 @auth.login_required()
 def database():
