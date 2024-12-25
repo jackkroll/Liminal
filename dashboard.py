@@ -13,6 +13,8 @@ from datetime import datetime
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from webpage import printers
+
 app = Flask(__name__)
 
 
@@ -123,9 +125,9 @@ def index():
     if configuredPrinters == 0:
         return redirect(url_for("setupLandingPage"))
 
-    for printer in liminal.printers:
+    for printer in liminal.printers + liminal.MK4Printers:
         printer.refreshData()
-    return render_template("dashboard.html", printers=liminal.printers, currentUser = auth.current_user(), role = get_user_roles(auth.current_user()), notifications = liminal.notifications)
+    return render_template("dashboard.html", printers=liminal.printers, mk4_printers = liminal.MK4Printers, currentUser = auth.current_user(), role = get_user_roles(auth.current_user()), notifications = liminal.notifications)
 
     body = "<html><body style = background-color:#1f1f1f>"
     body += f'''
@@ -890,14 +892,14 @@ def notauthorized(error):
     body = f"You don't have access to this page, you likely don't need it. Talk to a lead or a developer about this error"
     return body
 @app.errorhandler(403)
+@auth.login_required()
 def forbidden(error):
     body = f"You don't have access to this page, you likely don't need it. Talk to a lead or a developer about this error"
     return body
 @app.errorhandler(404)
+@auth.login_required()
 def notFound(error):
-    body = f'<img src= "https://i.redd.it/x3tgtg5hniyb1.jpeg" alt = "THEREWASAMISINPUT">'
-    body += "<h3>This page doesn't exist, either me or you misinput something</h3>"
-    return body
+    return render_template("404.html", role = get_user_roles(auth.current_user()))
 @app.route('/timelapse')
 @auth.login_required()
 def timelapse():
