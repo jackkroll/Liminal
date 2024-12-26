@@ -1,0 +1,20 @@
+ <div class="card" style="margin:10px">
+    <div class="card-body">
+    <h5 class="card-title">{{ account }}</h5>
+    <h6 class="card-subtitle mb-2 text-body-secondary">{{ accounts[account]["role"]|capitalize }}</h6>
+      <form action='{{ url_for( "updateUser", username=account ) }}'>
+    <div class="input-group mb-3">
+    <select class="form-select" id="role" name="role">
+    <option value="developer">Developer</option>
+    <option value="manager">Manager</option>
+    <option value="student">Student</option>
+    <option value="restricted">Restricted</option>
+    </select>
+    <button type="submit" class="btn btn-primary" id="button-add-on-1">Update Role</button>
+
+    </div>
+      </form>
+      <a href="{{url_for('resetPassword', username = account)}}" class="btn btn-warning" type="reset">Reset Password </a>
+      <a href="{{url_for('removeUser', username = account)}}" class="btn btn-danger" type="reset">Remove Account</a>
+    </div>
+  </div>

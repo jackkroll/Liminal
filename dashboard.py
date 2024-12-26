@@ -3,7 +3,7 @@ import main
 from crypt import methods
 from threading import Thread
 
-from flask import Flask, request, send_file, redirect, url_for, Response, render_template
+from flask import Flask, request, send_file, redirect, url_for, Response, render_template, jsonify
 from firebase_admin import credentials, initialize_app, storage
 from main import IndividualPrint,SinglePrinter, Liminal,PrintLater
 import firebase_admin
@@ -889,13 +889,11 @@ def setPrinterStatus():
 
 @app.errorhandler(401)
 def notauthorized(error):
-    body = f"You don't have access to this page, you likely don't need it. Talk to a lead or a developer about this error"
-    return body
+    return render_template("401.html")
 @app.errorhandler(403)
 @auth.login_required()
 def forbidden(error):
-    body = f"You don't have access to this page, you likely don't need it. Talk to a lead or a developer about this error"
-    return body
+    return render_template("403.html", role = get_user_roles(auth.current_user()))
 @app.errorhandler(404)
 @auth.login_required()
 def notFound(error):
@@ -1088,6 +1086,7 @@ def accountManger():
     file = open((f"{cwd}/ref/config.json"))
     jsonValues = json.load(file)
     file.close()
+    return render_template("manage-accounts.html", accounts = jsonValues["students"], role = get_user_roles(auth.current_user()))
     #Developer, access to developer settings + debug
     #Manager, configure roles
     #Student, basic printing capabilities
