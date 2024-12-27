@@ -16,6 +16,27 @@
       {% include "manage-account-card.html" %}
       </div>
       {% endfor %}
+      <div class="col">
+        <div class="card" style="margin:10px;padding:10px">
+        <h5 class="card-title">Create New Account</h5>
+        <form action="{{url_for('addUser')}}">
+        <div class="mb-3">
+            <label class="form-label" for="name">Name</label>
+            <input type="text" name="name" class="form-control" id="name" required placeholder="Name">
+        </div>
+        <div class="mb-3">
+          <label for="role" class="form-label">Role</label>
+          <select class="form-select" name="role" id="role">
+          <option value="Restricted">Restricted</option>
+            <option value="student">Student</option>
+            <option value="manager">Manager</option>
+            <option value="developer">Developer</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-success d-block w-100">Create User</button>
+        </form>
+      </div>
+    </div>
     </div>
 </div>
 <footer>

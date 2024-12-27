@@ -749,7 +749,6 @@ def ipManagement():
             else:
                 body += '<h3 style="color:red"> Printer is not registered in LMNL</h3>'
 
-
             body += f"""
             <form style="color:white" action="{url_for('changeIPAddr')}" method="post", enctype="multipart/form-data">
             <input type="hidden" name="printer" value="{item}">
