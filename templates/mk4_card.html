@@ -1,0 +1,64 @@
+<div class="card" style="padding:10px">
+<!-- <img src="http://via.placeholder.com/1280x720" class="card-img-top" alt="..."> -->
+<div class="card-title">
+<span class="h2">{{ printer.nickname }}</span>
+
+   <span class="badge text-bg-">Prusalink</span>
+    <!-- Change depending on state -->
+   <span class="badge text-bg-success">{{ printer.state }}</span>
+</div>
+    <div>
+        <span class="h6">Nozzle: {{ printer.nozzleTemp}}°C</span>
+        <span class="vr mx-2"></span>
+        <span class="h6">Bed: {{ printer.bedTemp }}°C</span>
+    </div>
+    <hr>
+{% if printer.printing %}
+<h5 style="padding-top:10px">Job title by User</h5>
+{% if printer.state == "Paused" %}
+{% set color = "warning" %}
+{% set bar = "progress-bar" %}
+{% else %}
+{% set color = "primary" %}
+{% set bar = "progress-bar-animated" %}
+{% endif %}
+<div class="progress" role="progressbar" aria-label="Basic example" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+    <div class="progress-bar text-bg-{{color}} progress-bar-striped {{bar}}" style="width: {{ printer.progress }}%"></div>
+</div>
+<hr>
+<div style="display:flex">
+    {% if printer.paused%}
+    <form action="/resume" method="post">
+    <input type="hidden" name="printer" value="{{ printer.nickname }}">
+    <button type="submit" class="btn btn-success">Resume Print</button>
+    </form>
+    {% else %}
+    <form action="/pause" method="post">
+    <input type="hidden" name="printer" value="{{ printer.nickname }}">
+    <button type="submit" class="btn btn-warning">Pause Print</button>
+    </form>
+    {% endif %}
+    <form action="/stop" method="post">
+    <input type="hidden" name="printer" value="{{ printer.nickname }}">
+    <button type="submit" class="btn btn-danger">Stop Print</button>
+    </form>
+</div>
+{% else %}
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#determine-path">
+  Submit Print Job
+</button>
+<div style="padding-top: 10px">
+{% include "print_modal.html" %}
+    {% if printer.nozzleTemp > 40 or printer.bedTempTarget > 40 %}
+    <form action="/cooldown" method="post">
+    <input type="hidden" name="printer" value="{{ printer.nickname }}">
+    <button type="submit" class="btn btn-info d-block w-100">Cooldown</button>
+    </form>
+    {% else %}
+    <form action="/heat" method="post">
+    <input type="hidden" name="printer" value="{{ printer.nickname }}">
+    <button type="submit" class="btn btn-danger d-block w-100">Preheat PLA</button>
+    </form>
+    {% endif %}
+{% endif %}
+</div>

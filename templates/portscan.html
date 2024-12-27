@@ -1,10 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <title>Network Port Scan</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/halfmoon@2.0.2/css/halfmoon.min.css" rel="stylesheet" integrity="sha256-RjeFzczeuZHCyS+Gvz+kleETzBF/o84ZRHukze/yv6o=" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/halfmoon@2.0.2/css/cores/halfmoon.modern.css" rel="stylesheet" integrity="sha256-DD6elX+jPmbFYPsGvzodUv2+9FHkxHlVtQi0/RJVULs=" crossorigin="anonymous">
 </head>
 <body>
+<div class="container-lg">
 <h1>Network Port Scan</h1>
 <b>Port scanning can be used it identify devices on the network remotely</b>
 {% if hosts|length > 0 %}
@@ -21,17 +25,23 @@
 <h3>A network scan is currently in progress, it shouldn't take very long (less than 5 minutes)</h3>
 {% else %}
 <form method="post" enctype="multipart/form-data">
-    <label for="hardware"> Hostname: </label>
-    <input type="text" id="hardware" name="hardware" value="aml-s905x-cc">
-    <br>
-    <label for="suffix"> Domain: </label>
-    <input type="text" id="suffix" name="suffix" value="district.lok12.org">
-    <br>
+    <div class="mw-100px">
+    <div class="input-group mb-3">
+        <input type="text" id="hardware" class="form-control" placeholder="Hardware name" value="aml-s905x-cc" aria-label="name" name="hardware">
+        <span class="input-group-text">.</span>
+        <input type="text" id="suffix" class="form-control" placeholder="Suffix" value="district.lok12.org" aria-label="suffix" name="suffix">
+    </div>
+    </div>
     <label for="agree"> I understand and accept to perform a port scan </label>
     <input type="checkbox" name="agree" id="agree">
     <br>
-    <input type="submit" value="Start Scan">
+    <input class="btn btn-primary" type="submit" value="Start Scan">
 </form>
 {% endif %}
+</div>
+<footer>
+{% include "footer.html" %}
+</footer>
 </body>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha256-CDOy6cOibCWEdsRiZuaHf8dSGGJRYuBGC+mjoJimHGw=" crossorigin="anonymous"></script>
 </html>

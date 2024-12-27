@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Forbidden</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/halfmoon@2.0.2/css/halfmoon.min.css" rel="stylesheet" integrity="sha256-RjeFzczeuZHCyS+Gvz+kleETzBF/o84ZRHukze/yv6o=" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/halfmoon@2.0.2/css/cores/halfmoon.modern.css" rel="stylesheet" integrity="sha256-DD6elX+jPmbFYPsGvzodUv2+9FHkxHlVtQi0/RJVULs=" crossorigin="anonymous">
+</head>
+<body>
+{% include "navbar.html" %}
+<div class="container-md w-50">
+  <div class="card">
+    <div class="card-body">
+    <h5 class="card-title">403: Forbidden</h5>
+    <h6 class="card-subtitle mb-2 text-body-secondary">You do not have access to this content</h6>
+    <p class="card-text">
+    It appears you do not have proper permissions to access this content. This is often because they are either pages that can disrupt the normal function of the site, or are just not necessary for everyone. <strong>If you believe this to be an error, consult a lead</strong>
+    </p>
+    </div>
+  </div>
+</div>
+<footer>
+{% include "footer.html" %}
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha256-CDOy6cOibCWEdsRiZuaHf8dSGGJRYuBGC+mjoJimHGw=" crossorigin="anonymous"></script>
+</body>
+</html>

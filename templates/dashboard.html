@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/halfmoon@2.0.2/css/halfmoon.min.css" rel="stylesheet" integrity="sha256-RjeFzczeuZHCyS+Gvz+kleETzBF/o84ZRHukze/yv6o=" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/halfmoon@2.0.2/css/cores/halfmoon.modern.css" rel="stylesheet" integrity="sha256-DD6elX+jPmbFYPsGvzodUv2+9FHkxHlVtQi0/RJVULs=" crossorigin="anonymous">
+</head>
+<body>
+{% include "navbar.html" %}
+
+<div class="container-lg">
+{% if request.args.get('txt') != None %}
+<div class="alert alert-{{request.args.get('color')}} fade show" style="margin-top:10px" role="alert">
+{{ request.args.get('txt') }}
+<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+    <!--
+{% for notification in notifications %}
+    {% if notification.target == "all" or notification.target == currentUser %}
+    {% if notification.userDisabled %}
+    {% set type = "alert-dismissible" %}
+    {% endif %}
+    <div class="alert alert-{{notification.color}} {{type}} fade show" style="margin-top:10px" role="alert">
+    {{notification.text}}
+    {% if notification.userDisabled %}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    {% endif %}
+    </div>
+    {% endif %}
+{% endfor %}
+-->
+  <h1>Printer Dashboard</h1>
+  <div class="row">
+    {% if printers|length == 0 and mk4_printers|length == 0 %}
+    <div class="card">
+    <div class="card-body">
+    <h5 class="card-title">No Printers Available!</h5>
+    <h6 class="card-subtitle mb-2 text-body-secondary">The print interface is unable to print on any printers</h6>
+    <p class="card-text">
+    This can be for a few reasons, and it is a quick fix. For those with developer permissions, please check the debugging page for more information. This may also be because the device IP has changed, consider a port scan to locate them. Otherwise, ensure the printer cables are connected to the computers and they are connected to ethernet.
+    </p>
+    <a href="/debug" class="card-link">Debugging Page</a>
+    <a href="/dev/scan" class="card-link">Port Scan</a>
+  </div>
+</div>
+    {% else %}
+    {% for printer in printers %}
+    <div class="col-7 col-sm-4" style="padding:10px">{% include "mk3_card.html" %}</div>
+    {% endfor %}
+    {% for printer in mk4_printers %}
+    <div class="col-7 col-sm-4" style="padding:10px">{% include "mk4_card.html" %}</div>
+    {% endfor %}
+    {% endif %}
+  </div>
+</div>
+<footer>
+{% include "footer.html" %}
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha256-CDOy6cOibCWEdsRiZuaHf8dSGGJRYuBGC+mjoJimHGw=" crossorigin="anonymous"></script>
+</body>
+</html>

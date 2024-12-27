@@ -3,7 +3,7 @@ import main
 from crypt import methods
 from threading import Thread
 
-from flask import Flask, request, send_file, redirect, url_for, Response, render_template
+from flask import Flask, request, send_file, redirect, url_for, Response, render_template, jsonify
 from firebase_admin import credentials, initialize_app, storage
 from main import IndividualPrint,SinglePrinter, Liminal,PrintLater
 import firebase_admin
@@ -12,6 +12,8 @@ import numpy as np
 from datetime import datetime
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
+
+from webpage import printers
 
 app = Flask(__name__)
 
@@ -122,6 +124,11 @@ def index():
             configuredPrinters += 1
     if configuredPrinters == 0:
         return redirect(url_for("setupLandingPage"))
+
+    for printer in liminal.printers + liminal.MK4Printers:
+        printer.refreshData()
+    return render_template("dashboard.html", printers=liminal.printers, mk4_printers = liminal.MK4Printers, currentUser = auth.current_user(), role = get_user_roles(auth.current_user()), notifications = liminal.notifications)
+
     body = "<html><body style = background-color:#1f1f1f>"
     body += f'''
     <head>
@@ -359,13 +366,13 @@ def functions():
         if request.form.get("printer") == "all":
             for printer in liminal.printers + liminal.MK4Printers:
                 printer.preheat()
-            return redirect(url_for("index"))
+            return redirect(url_for("index", txt="Preheating all printers", color = "success"))
         else:
-            print(request.form.get(""))
             for printer in liminal.printers + liminal.MK4Printers:
                 if request.form.get("printer") == printer.nickname:
                     printer.preheat()
-            return redirect(url_for("index"))
+                    return redirect(url_for("index", txt=f"{printer.nickname} is now being preheated", color = "success"))
+            return redirect(url_for("index", txt="No printer found", color="warning"))
 
 @app.route('/cooldown', methods = ["POST"])
 @auth.login_required(role = ["student", "manager", "developer"])
@@ -373,7 +380,17 @@ def cooldown():
     for printer in liminal.printers + liminal.MK4Printers:
         if request.form.get("printer") == printer.nickname:
             printer.cooldown()
-            return True
+            return redirect(url_for("index", txt=f"{printer.nickname} is being cooled down", color="success"))
+
+    return redirect(url_for("index", txt="No printer found", color="warning"))
+@app.route('/stop', methods = ["POST"])
+@auth.login_required(role = ["student", "manager", "developer"])
+def stop():
+    for printer in liminal.printers + liminal.MK4Printers:
+        if request.form.get("printer") == printer.nickname:
+            printer.abort()
+            return redirect(url_for("index", txt=f"Stopping print on {printer.nickname}", color="success"))
+    return redirect(url_for("index", txt="No printer found", color="warning"))
 
 @app.route('/pause', methods = ["POST"])
 @auth.login_required(role = ["student", "manager", "developer"])
@@ -381,31 +398,34 @@ def pausePrint():
     if request.form.get("printer") == "all":
         for printer in liminal.printers:
             printer.pause()
-        return redirect(url_for("index"))
+        return redirect(url_for("index", txt=f"Pausing all printers", color="success"))
     else:
         for printer in liminal.printers:
             if request.form.get("printer") == printer.nickname:
                 printer.pause()
-                return redirect(url_for("index"))
+                return redirect(url_for("index", txt=f"Pausing print on {printer.nickname}", color="success"))
         for printer in liminal.MK4Printers:
             if request.form.get("printer") == printer.nickname:
                 printer.pause()
-
+                return redirect(url_for("index", txt=f"Pausing print on {printer.nickname}", color="success"))
+        return redirect(url_for("index", txt=f"No printer found", color="warning"))
 @app.route('/resume', methods = ["POST"])
 @auth.login_required(role = ["student", "manager", "developer"])
 def resumePrint():
     if request.form.get("printer") == "all":
         for printer in liminal.printers:
             printer.resume()
-        return redirect(url_for("index"))
+        return redirect(url_for("index", txt=f"Resuming all prints", color="success"))
     else:
         for printer in liminal.printers:
             if request.form.get("printer") == printer.nickname:
                 printer.resume()
-                return redirect(url_for("index"))
+                return redirect(url_for("index", txt=f"Resuming print on {printer.nickname}", color="success"))
         for printer in liminal.MK4Printers:
             if request.form.get("printer") == printer.nickname:
                 printer.resume()
+                return redirect(url_for("index", txt=f"Resuming print on {printer.nickname}", color="success"))
+        return redirect(url_for("index", txt=f"No printer found", color="warning"))
 @app.route('/print', methods = ["GET", "POST"])
 @auth.login_required(role = ["student", "manager", "developer"])
 #Form components nessesary:
@@ -437,7 +457,7 @@ def uploadPrintURL():
                     print("[OPERATIONAL] Form data successfully gathered")
                 except Exception as e:
                     print("[ERROR] Failed to gather form data")
-                    return "Unable to get HTTP form data"
+                    return redirect(url_for("index", txt=f"Unable to get form data", color="danger"))
 
 
                     #printer.upload(individualPrint)
@@ -458,11 +478,10 @@ def uploadPrintURL():
                         else:
                             binaryGcode = False
                         printer.upload(file_contents, nickname, binaryGcode)
-                        return redirect(url_for("mk4LoadingScreen", printerNickname = printer.nickname))
                         print("[OPERATIONAL] Successfully printed onto a Mk4 printer")
                     else:
                         print(f"[ERROR] The printer {request.form.get('printer')} is not registered")
-                        return f"The printer {request.form.get('printer')} is not registered"
+                        return redirect(url_for("index", txt=f"Printer requested does not exist", color="danger"))
                     #Ensures a .00000000000000000000010661449% change of a UUID collision
                 try:
                     chars = list(string.ascii_lowercase + string.ascii_uppercase + string.digits)
@@ -491,9 +510,13 @@ def uploadPrintURL():
                     })
                 except Exception:
                     print("[WARNING] The print was not logged successfully to Firebase, but was uploaded to the printers")
-                    return "Your print was successfully uploaded to the printer but was not saved to the cloud."
+                    return redirect(url_for("index", txt=f"Print submitted successfully, but was not saved to the cloud", color="warning"))
 
-                return f"Your print was successfully uploaded and documented. The unique code for your print is: {individualPrint.uuid}"
+                return redirect(url_for("index", txt=f"Print submitted successfully, and saved to the cloud with code {individualPrint.uuid}", color = "success"))
+
+        return redirect(url_for("index", txt=f"Printer \"{request.form.get('printer')}\"was not located",
+                                        color="danger"))
+
 @app.route('/db')
 @auth.login_required()
 def database():
@@ -726,7 +749,6 @@ def ipManagement():
             else:
                 body += '<h3 style="color:red"> Printer is not registered in LMNL</h3>'
 
-
             body += f"""
             <form style="color:white" action="{url_for('changeIPAddr')}" method="post", enctype="multipart/form-data">
             <input type="hidden" name="printer" value="{item}">
@@ -866,17 +888,15 @@ def setPrinterStatus():
 
 @app.errorhandler(401)
 def notauthorized(error):
-    body = f"You don't have access to this page, you likely don't need it. Talk to a lead or a developer about this error"
-    return body
+    return render_template("401.html")
 @app.errorhandler(403)
+@auth.login_required()
 def forbidden(error):
-    body = f"You don't have access to this page, you likely don't need it. Talk to a lead or a developer about this error"
-    return body
+    return render_template("403.html", role = get_user_roles(auth.current_user()))
 @app.errorhandler(404)
+@auth.login_required()
 def notFound(error):
-    body = f'<img src= "https://i.redd.it/x3tgtg5hniyb1.jpeg" alt = "THEREWASAMISINPUT">'
-    body += "<h3>This page doesn't exist, either me or you misinput something</h3>"
-    return body
+    return render_template("404.html", role = get_user_roles(auth.current_user()))
 @app.route('/timelapse')
 @auth.login_required()
 def timelapse():
@@ -1065,6 +1085,7 @@ def accountManger():
     file = open((f"{cwd}/ref/config.json"))
     jsonValues = json.load(file)
     file.close()
+    return render_template("manage-accounts.html", accounts = jsonValues["students"], role = get_user_roles(auth.current_user()))
     #Developer, access to developer settings + debug
     #Manager, configure roles
     #Student, basic printing capabilities
@@ -1380,9 +1401,9 @@ def setupPrinters():
 
         jsonAddition = {
             f'{nickname}' : {
-            "ipAddress" if isMk3 else "Mk4IPAddress": apiKey,
+            "ipAddress" if isMk3 else "Mk4IPAddress": ipAddr,
             "apiKey": apiKey,
-            "prefix":prefix
+            "prefix": prefix
             }
         }
         with open(f"{cwd}/ref/config.json", "r") as f:
