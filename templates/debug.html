@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Accounts</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/halfmoon@2.0.2/css/halfmoon.min.css" rel="stylesheet" integrity="sha256-RjeFzczeuZHCyS+Gvz+kleETzBF/o84ZRHukze/yv6o=" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/halfmoon@2.0.2/css/cores/halfmoon.modern.css" rel="stylesheet" integrity="sha256-DD6elX+jPmbFYPsGvzodUv2+9FHkxHlVtQi0/RJVULs=" crossorigin="anonymous">
+</head>
+<body>
+
+<div class="container-lg">
+      <div class="row row-cols-2">
+        <div class="col">
+           <div class="card" style="margin:10px" >
+              <div class="card-body">
+              <h5 class="card-title">Printer Name</h5>
+                <div class="alert alert-success alert-dismissible" role="alert" data-bs-toggle="tooltip" data-bs-title="Collaborate with your team">
+                Printer is reachable via HTTP
+              </div>
+              <div class="alert alert-success alert-dismissible" role="alert" data-bs-toggle="tooltip" data-bs-title="Collaborate with your team">
+                Printer is operational in Octoprint
+              </div>
+              <div class="alert alert-success alert-dismissible" role="alert" data-bs-toggle="tooltip" data-bs-title="Collaborate with your team">
+                Printer is registered by the print interface
+              </div>
+              <hr>
+              <p>The printer appears to be functioning correctly, if that is not the case please submit an issue on github!</p>
+              <hr>
+              <button type="submit" class="btn btn-warning" id="button-add-on-1">Update Printer Information</button>
+            </div>
+           </div>
+        </div>
+        <div class="col">
+           <div class="card" style="margin:10px" >
+              <div class="card-body">
+              <h5 class="card-title">Printer Name</h5>
+                <div class="alert alert-danger alert-dismissible" role="alert" data-bs-toggle="tooltip" data-bs-title="Collaborate with your team">
+                Printer is not reachable via HTTP
+                </div>
+                <div class="alert alert-danger alert-dismissible" role="alert" data-bs-toggle="tooltip" data-bs-title="Collaborate with your team">
+                Printer is not registered by the print interface
+                </div>
+              <hr>
+              <p>The printer is not reachable over the network, this is either because the device is not on/plugged into ethernet, but most likely the IP address registered by the system has changed. You may consider a <a href="/dev/scan">port scan</a> to find the device</p>
+              <hr>
+              <button data-bs-toggle="modal" data-bs-target="#example-modal-1" class="btn btn-warning" id="button-add-on-2">Update Printer Information</button>
+            </div>
+           </div>
+        </div>
+      </div>
+
+  <div class="modal fade" id="example-modal-1" tabindex="-1" aria-labelledby="modal-title-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="modal-title-1">Modal title</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        This is the modal body which can contain all types of custom content, such as forms, tooltips, popovers, grids, etc.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha256-CDOy6cOibCWEdsRiZuaHf8dSGGJRYuBGC+mjoJimHGw=" crossorigin="anonymous"></script>
+</body>
+</html>
