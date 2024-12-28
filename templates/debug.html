@@ -11,43 +11,24 @@
 
 <div class="container-lg">
       <div class="row row-cols-2">
+        {% for printer in flags %}
         <div class="col">
            <div class="card" style="margin:10px" >
               <div class="card-body">
-              <h5 class="card-title">Printer Name</h5>
-                <div class="alert alert-success alert-dismissible" role="alert" data-bs-toggle="tooltip" data-bs-title="Collaborate with your team">
-                Printer is reachable via HTTP
-              </div>
-              <div class="alert alert-success alert-dismissible" role="alert" data-bs-toggle="tooltip" data-bs-title="Collaborate with your team">
-                Printer is operational in Octoprint
-              </div>
-              <div class="alert alert-success alert-dismissible" role="alert" data-bs-toggle="tooltip" data-bs-title="Collaborate with your team">
-                Printer is registered by the print interface
-              </div>
+              <h5 class="card-title">{{ printer }}</h5>
+                {% for subflag in flags[printer] %}
+                <div class="alert alert-{{flags[printer][loop.index - 1][2]}} alert-dismissible" role="alert">
+                    {{ flags[printer][loop.index - 1][0] }}
+                </div>
+                {% endfor %}
               <hr>
-              <p>The printer appears to be functioning correctly, if that is not the case please submit an issue on github!</p>
+              <p>Mediation Advice</p>
               <hr>
               <button type="submit" class="btn btn-warning" id="button-add-on-1">Update Printer Information</button>
             </div>
            </div>
         </div>
-        <div class="col">
-           <div class="card" style="margin:10px" >
-              <div class="card-body">
-              <h5 class="card-title">Printer Name</h5>
-                <div class="alert alert-danger alert-dismissible" role="alert" data-bs-toggle="tooltip" data-bs-title="Collaborate with your team">
-                Printer is not reachable via HTTP
-                </div>
-                <div class="alert alert-danger alert-dismissible" role="alert" data-bs-toggle="tooltip" data-bs-title="Collaborate with your team">
-                Printer is not registered by the print interface
-                </div>
-              <hr>
-              <p>The printer is not reachable over the network, this is either because the device is not on/plugged into ethernet, but most likely the IP address registered by the system has changed. You may consider a <a href="/dev/scan">port scan</a> to find the device</p>
-              <hr>
-              <button data-bs-toggle="modal" data-bs-target="#example-modal-1" class="btn btn-warning" id="button-add-on-2">Update Printer Information</button>
-            </div>
-           </div>
-        </div>
+        {% endfor %}
       </div>
 
   <div class="modal fade" id="example-modal-1" tabindex="-1" aria-labelledby="modal-title-1" aria-hidden="true">
