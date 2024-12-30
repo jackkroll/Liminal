@@ -10,6 +10,10 @@
 <body>
 
 <div class="container-lg">
+    <div class="alert alert-danger" role="alert">
+      <h5 class="alert-heading">Be careful</h5>
+  This page contains content that will alter how the system operates. You should only update information if you know what you are doing. <strong>Ask for help if you need!</strong>
+    </div>
       <div class="row row-cols-2">
         {% for printer in flags %}
         <div class="col">
@@ -21,33 +25,43 @@
                     {{ flags[printer][loop.index - 1][0] }}
                 </div>
                 {% endfor %}
-              <hr>
-              <p>Mediation Advice</p>
-              <hr>
-              <button type="submit" class="btn btn-warning" id="button-add-on-1">Update Printer Information</button>
+              <button type="submit" data-bs-toggle="modal" data-bs-target="#update-info-{{printer|remove_spaces}}" class="btn btn-warning" id="update-info-btn-{{printer|remove_spaces}}">Update Printer Information</button>
             </div>
            </div>
         </div>
         {% endfor %}
       </div>
-
-  <div class="modal fade" id="example-modal-1" tabindex="-1" aria-labelledby="modal-title-1" aria-hidden="true">
+{% for printer in flags %}
+  <div class="modal fade" id="update-info-{{printer|remove_spaces}}" tabindex="-1" aria-labelledby="update-info-{{printer|remove_spaces}}" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="modal-title-1">Modal title</h1>
+        <h1 class="modal-title fs-5" id="{{printer|remove_spaces}}-modal-title-1">Update Printer Information</h1>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        This is the modal body which can contain all types of custom content, such as forms, tooltips, popovers, grids, etc.
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary">Save</button>
+        <label class="form-label" for="{{printer|remove_spaces}}-ip-input">IP Address</label>
+        <form action="/dev/ip" method="post" enctype="multipart/form-data">
+        <div class="input-group mb-3">
+          <input name="printer" type="hidden" value="{{printer}}">
+          <span class="input-group-text" id="{{printer|remove_spaces}}-ip-prefix">http://</span>
+          <input type="text" name="addr" id="{{printer|remove_spaces}}-ip-input" class="form-control" placeholder="127.0.0.1" aria-label="IP Address" aria-describedby="{{printer|remove_spaces}}-ip-prefix">
+          <button type="submit" class="btn btn-primary" id="{{printer|remove_spaces}}-update-ip-bttn">Update IP</button>
+        </div>
+        </form>
+        <label class="form-label" for="{{printer|remove_spaces}}-update-key">API Key</label>
+        <form action="/dev/key" method="post" enctype="multipart/form-data">
+        <div class="input-group mb-3">
+          <input name="printer" type="hidden" value="{{printer}}">
+          <input type="text" name="key" id="{{printer|remove_spaces}}-update-key" class="form-control" placeholder="ABCD1234" aria-label="API Key">
+          <button type="submit" class="btn btn-primary" id="{{printer|remove_spaces}}-update-key-bttn">Update API Key</button>
+        </div>
+        </form>
       </div>
     </div>
   </div>
 </div>
+    {% endfor %}
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha256-CDOy6cOibCWEdsRiZuaHf8dSGGJRYuBGC+mjoJimHGw=" crossorigin="anonymous"></script>
 </body>

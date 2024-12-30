@@ -31,7 +31,7 @@
           <input type="text" class="form-control" id="nickname-submit" name="nickname" required placeholder="Print Name" required>
           </div>
           <div class="input-group mb-3">
-            <input class="form-control" placeholder="Print GCODE" type="file" accept=".gcode" name="gcode" required>
+            <input class="form-control" placeholder="Print GCODE" type="file" accept=".gcode,.bgcode" name="gcode" required>
           </div>
       </div>
       </div>
@@ -51,8 +51,8 @@
         <h1 class="modal-title fs-5" id="schedule-print-title">Submit Print Job</h1>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="/print" method="post">
-      <input type="hidden" name="printercode" value="{{printer.code}}">
+      <form action="/printLater" method="post" enctype="multipart/form-data">
+      <input type="hidden" name="printer" value="{{printer.nickname}}">
       <input type="hidden" name="creator" value="{{currentUser}}">
       <div class="modal-body">
         <div class="container-md">
@@ -61,10 +61,10 @@
           <input type="text" class="form-control" id="nickname-schedule" name="nickname" placeholder="Print Name" required>
           </div>
           <div class="input-group mb-3">
-            <input class="form-control" placeholder="Print GCODE" type="file" accept=".gcode" name="url" required>
+            <input class="form-control" placeholder="Print GCODE" type="file" accept=".gcode" name="gcode" required>
           </div>
           <label class="form-label" for="nickname-schedule">Time to attempt print</label>
-          <input type="datetime-local" class="form-control" id="scheduled-time" name="nickname" required>
+          <input type="datetime-local" class="form-control" id="scheduled-time" name="date" required>
           <div id="print-later-info" class="form-text">
           As many other machines, 3D printers should never be left unattended.
           </div>

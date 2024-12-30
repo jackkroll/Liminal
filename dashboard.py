@@ -4,6 +4,7 @@ from crypt import methods
 from threading import Thread
 
 from flask import Flask, request, send_file, redirect, url_for, Response, render_template, jsonify
+from jinja2.filters import FILTERS
 from firebase_admin import credentials, initialize_app, storage
 from main import IndividualPrint,SinglePrinter, Liminal,PrintLater
 import firebase_admin
@@ -16,7 +17,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from webpage import printers
 
 app = Flask(__name__)
-
+def remove_spaces(input:str) -> str:
+    return input.replace(" ","")
+FILTERS["remove_spaces"] = remove_spaces
 
 #autoUpdateTest2
 auth = HTTPBasicAuth()
@@ -594,7 +597,21 @@ def changeIPAddr():
             changedIP = request.form.get("printer")
             newAddress = request.form.get("addr")
             jsonValues = json.load(f)
-            jsonValues[changedIP]["ipAddress"] = newAddress
+            jsonValues[changedIP]["ipAddress"] = "http://" + newAddress
+        with open(f"{cwd}/ref/config.json", "w") as f:
+            json.dump(jsonValues,f,indent=4)
+        return redirect(url_for("setPrinterStatus"))
+@app.route('/dev/key',methods = ["GET", "POST"])
+@auth.login_required(role="developer")
+def changeAPIKey():
+    if request.method == "GET":
+        return redirect(url_for("setPrinterStatus"))
+    else:
+        with open(f"{cwd}/ref/config.json", "r") as f:
+            changedKey = request.form.get("printer")
+            newKey = request.form.get("key")
+            jsonValues = json.load(f)
+            jsonValues[changedKey]["apiKey"] = newKey
         with open(f"{cwd}/ref/config.json", "w") as f:
             json.dump(jsonValues,f,indent=4)
         return redirect(url_for("setPrinterStatus"))
@@ -702,6 +719,7 @@ def ipManagement():
     jsonValues = json.load(file)
     file.close()
     flags = {}
+    advice = {}
     for item in jsonValues:
         subflags = []
         if "ipAddress" in jsonValues[item]:
@@ -723,7 +741,7 @@ def ipManagement():
                 print(e)
                 octoprint = False
                 subflags.append(["Printer is not reachable via HTTP", "no-reach", "danger"])
-                #body += '<h3 style="color:red"> Printer is not reachable via HTTP</h3>'
+
             nicknames = []
             for printer in liminal.printers + liminal.MK4Printers:
                 nicknames.append(printer.nickname)
@@ -755,6 +773,8 @@ def ipManagement():
                                      "primary"])
         if "Mk4IPAddress" in jsonValues[item] or "ipAddress" in jsonValues[item]:
             flags[item] = subflags
+
+
     return render_template("debug.html", flags=flags)
 
 @app.route('/dev/mk4Update/<printer>/<type>', methods = ["POST"])
