@@ -1,9 +1,14 @@
 import datetime,json,random,time,string,os,sys, threading, cv2, requests
+
+from google.type.datetime_pb2 import DateTime
+from pyasn1.debug import Printer
+
 import main
 from crypt import methods
 from threading import Thread
 
 from flask import Flask, request, send_file, redirect, url_for, Response, render_template, jsonify
+from jinja2.filters import FILTERS
 from firebase_admin import credentials, initialize_app, storage
 from main import IndividualPrint,SinglePrinter, Liminal,PrintLater
 import firebase_admin
@@ -16,6 +21,16 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from webpage import printers
 
 app = Flask(__name__)
+def remove_spaces(input:str) -> str:
+    return input.replace(" ","")
+FILTERS["remove_spaces"] = remove_spaces
+def filter_list(input:list[PrintLater], printer: Printer) -> list[PrintLater]:
+    newList = []
+    for job in input:
+        if job.printer == printer:
+            newList.append(job)
+    return newList
+FILTERS["filter_list"] = filter_list
 
 
 #autoUpdateTest2
@@ -127,7 +142,7 @@ def index():
 
     for printer in liminal.printers + liminal.MK4Printers:
         printer.refreshData()
-    return render_template("dashboard.html", printers=liminal.printers, mk4_printers = liminal.MK4Printers, currentUser = auth.current_user(), role = get_user_roles(auth.current_user()), notifications = liminal.notifications)
+    return render_template("dashboard.html", printers=liminal.printers, mk4_printers = liminal.MK4Printers, currentUser = auth.current_user(), role = get_user_roles(auth.current_user()), notifications = liminal.notifications, queue=liminal.scheduledPrints)
 
     body = "<html><body style = background-color:#1f1f1f>"
     body += f'''
@@ -590,11 +605,27 @@ def changeIPAddr():
     if request.method == "GET":
         return redirect(url_for("setPrinterStatus"))
     else:
-        with open(f"{cwd}/ref/config.json", "r") as f:
+        with (open(f"{cwd}/ref/config.json", "r") as f):
             changedIP = request.form.get("printer")
             newAddress = request.form.get("addr")
+            ismk4 = request.form.get("isMk4").lower() == "true"
             jsonValues = json.load(f)
-            jsonValues[changedIP]["ipAddress"] = newAddress
+            field = "Mk4IPAddress" if ismk4 else "ipAddress"
+            jsonValues[changedIP][field] = "http://" + newAddress
+        with open(f"{cwd}/ref/config.json", "w") as f:
+            json.dump(jsonValues,f,indent=4)
+        return redirect(url_for("setPrinterStatus"))
+@app.route('/dev/key',methods = ["GET", "POST"])
+@auth.login_required(role="developer")
+def changeAPIKey():
+    if request.method == "GET":
+        return redirect(url_for("setPrinterStatus"))
+    else:
+        with open(f"{cwd}/ref/config.json", "r") as f:
+            changedKey = request.form.get("printer")
+            newKey = request.form.get("key")
+            jsonValues = json.load(f)
+            jsonValues[changedKey]["apiKey"] = newKey
         with open(f"{cwd}/ref/config.json", "w") as f:
             json.dump(jsonValues,f,indent=4)
         return redirect(url_for("setPrinterStatus"))
@@ -701,84 +732,64 @@ def ipManagement():
     file = open(f"{cwd}/ref/config.json")
     jsonValues = json.load(file)
     file.close()
-    body = "<html><body style = background-color:black>"
-    body += """
-    <head>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter">
-    </head>
-    <style>
-    body {
-        font-family: "Inter", sans-serif;
-    }
-    </style>
-    """
+    flags = {}
+    advice = {}
     for item in jsonValues:
+        subflags = []
         if "ipAddress" in jsonValues[item]:
-            body += f'<h1 style="color:{liminal.systemColor}"> {item} </h1>'
             try:
                 req = requests.get(f'{jsonValues[item]["ipAddress"]}/api/printer', headers={"X-API-KEY": f'{jsonValues[item]["apiKey"]}'})
-                body += '<h3 style="color:green"> Printer is reachable via HTTP</h3>'
+                #body += '<h3 style="color:green"> Printer is reachable via HTTP</h3>'
                 octoprint = True
                 if not req.ok:
-                    body += '<h3 style="color:orange"> Printer is not operational on Octoprint </h3>'
+                    #body += '<h3 style="color:orange"> Printer is not operational on Octoprint </h3>'
+                    subflags.append(["Printer is not operational on Octoprint", "no-op","danger"])
                 else:
                     if not req.json()["state"]["flags"]["operational"]:
-                        body += '<h3 style="color:orange"> Printer is not operational on Octoprint via flags</h3>'
+                        subflags.append(["Printer is not operational on Octoprint via flags", "no-op","danger"])
+                        #body += '<h3 style="color:orange"> Printer is not operational on Octoprint via flags</h3>'
                     else:
-                        body += '<h3 style="color:green"> Printer is operational via Octoprint</h3>'
+                        subflags.append(["Printer is operational on Octoprint","op", "success"])
+                        #body += '<h3 style="color:green"> Printer is operational via Octoprint</h3>'
             except Exception as e:
                 print(e)
                 octoprint = False
-                body += '<h3 style="color:red"> Printer is not reachable via HTTP</h3>'
+                subflags.append(["Printer is not reachable via HTTP", "no-reach", "danger"])
+
             nicknames = []
             for printer in liminal.printers + liminal.MK4Printers:
                 nicknames.append(printer.nickname)
                 if printer.nickname == item and octoprint:
                     percentUsed = printer.percentUsed()
                     if percentUsed > 90:
-                        color = "red"
-                    elif percentUsed > 75:
-                        color = "orange"
+                        color = "danger"
                     elif percentUsed > 60:
-                        color = "yellow"
+                        color = "warning"
                     else:
-                        color = "green"
-                    body += f'<h3 style="color:{color}"> {int(percentUsed)}% of onboard storage used</h3>'
+                        color = "success"
+                    subflags.append([f"{round(percentUsed,2)}% of onboard storage used", "good-storage" if color == "danger" else "bad-storage", color])
             if item in nicknames:
-                body += '<h3 style="color:green"> Printer registered in LMNL</h3>'
+                subflags.append(["Printer registered by system", "registered", "success"])
             else:
-                body += '<h3 style="color:red"> Printer is not registered in LMNL</h3>'
+                subflags.append(["Printer not registered by system", "not-registered", "danger"])
 
-            body += f"""
-            <form style="color:white" action="{url_for('changeIPAddr')}" method="post", enctype="multipart/form-data">
-            <input type="hidden" name="printer" value="{item}">
-            <input type="text" name="addr" value="{jsonValues[item]["ipAddress"]}">
-            <button type="submit">Update IP Address</button>
-            </form>
-            """
         if "Mk4IPAddress" in jsonValues[item]:
-            body += f'<h1 style="color:{liminal.systemColor}"> {item} </h1>'
-            body += f"""
-            <form style="color:white" action="{url_for('changeIPAddrMK4')}" method="post", enctype="multipart/form-data">
-            <input type="hidden" name="printer" value="{item}">
-            <input type="text" name="addr" value="{jsonValues[item]["Mk4IPAddress"]}">
-            <button type="submit">Update IP Address</button>
-            </form>
-            """
             for printer in liminal.MK4Printers:
                 if printer.nickname == item:
                     if printer.serial != None:
-                        body += '<h3 style="color:green">Connected via serial</h3>'
+                        subflags.append(["Connected via serial connection", "serial", "success"])
                     else:
-                        body += '<h3 style="color:orange">Serial connection failed</h3>'
+                        subflags.append(["Serial Connection not available", "serial", "primary"])
                     if printer.freeSpace != None:
-                        body += f'<h3 style="color:blue">{printer.freeSpace/1_000_000_000}gb free on {printer.storageName}</h3>'
+                        subflags.append([f"{round(printer.freeSpace/1_000_000_000,2)}gb free on {printer.storageName}", "storage", "primary"])
                     else:
-                        body += f'<h3 style="color:orange">Could not determine free storage on {printer.storageName}, likely due to no Prusa API support</h3>'
-    body += """
-    <h1 style="color:red"> WARNING: Changing these values may result in this software not recognizing printers, only do this if you know what you're doing </h1>
-    """
-    return body
+                        subflags.append([f"Could not determine free storage on {printer.storageName}", "null-storage",
+                                     "primary"])
+        if "Mk4IPAddress" in jsonValues[item] or "ipAddress" in jsonValues[item]:
+            flags[item] = subflags
+
+
+    return render_template("debug.html", flags=flags)
 
 @app.route('/dev/mk4Update/<printer>/<type>', methods = ["POST"])
 @auth.login_required(role="developer")
@@ -988,6 +999,20 @@ def nukeFiles(printerNickname):
             printer.nukeFiles()
             return f"Success, percent storage is now: {printer.percentUsed()}"
 
+@app.route('/printLater/cancel', methods=["POST"])
+@auth.login_required(role=["student", "manager", "developer"])
+def removeItemFromQueue():
+    for printer in liminal.printers + liminal.MK4Printers:
+        if request.form.get("printer") == printer.nickname:
+            for job in liminal.scheduledPrints:
+                if job.nickname == request.form.get("nickname"):
+                    if (job.preheating):
+                        printer.cooldown()
+                    liminal.scheduledPrints.remove(job)
+                    return redirect(url_for("index", txt=f"{job.nickname} has been cancelled on {printer.nickname}", color="success"))
+    return redirect(url_for("index", txt=f"The job count not be located in the queue", color="warning"))
+
+
 @app.route('/printLater', methods = ["POST"])
 @auth.login_required(role = ["student", "manager", "developer"])
 def printLater():
@@ -1024,9 +1049,9 @@ def printLater():
 
         liminal.scheduledPrints.append(printLaterobj)
         print(f"[OPERATIONAL] Print has been scheduled on {printerToPrint.nickname} for {time.strftime('%Y-%m-%d %H:%M:%S')}")
-        return "Print has been scheduled!"
+        return redirect(url_for("index", txt=f"Print has been scheduled!", color="success"))
     else:
-        return f'Printer "{request.form.get("printer")}" not found'
+        return redirect(url_for("index", txt=f"{request.form.get('printer')} was not found", color="warning"))
 
 @app.route('/account/reset/<username>')
 @auth.login_required(role=["developer", "manager"])

@@ -24,7 +24,7 @@
     </div>
     <hr>
 {% if printer.printing %}
-<h5 style="padding-top:10px">Job title by User</h5>
+<!-- <h5 style="padding-top:10px">Job title by User</h5> -->
 {% if printer.state == "Paused" %}
 {% set color = "warning" %}
 {% set bar = "progress-bar" %}
@@ -72,4 +72,21 @@
     </form>
     {% endif %}
 {% endif %}
+{% if (queue|filter_list(printer))|length > 0 %}
+<div class="dropdown-center">
+<button class="btn btn-secondary dropdown-toggle d-block w-100" style="margin-top: 10px" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+    View Scheduled Prints
+</button>
+    <ul class="dropdown-menu">
+    {% for job in queue|filter_list(printer) %}
+    <form action="/printLater/cancel" method="post">
+    <input type="hidden" name="printer" value="{{ job.printer.nickname }}">
+    <input type="hidden" name="nickname" value="{{ job.nickname }}">
+    <li><a class="dropdown-item" aria-current="true">{{job.nickname}}<button type="submit" class="btn btn-danger" style="margin-left:10px">Cancel</button> </a></li>
+    </form>
+    {% endfor %}
+    </ul>
+</div>
+{% endif %}
+</div>
 </div>
