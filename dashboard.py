@@ -1,4 +1,8 @@
 import datetime,json,random,time,string,os,sys, threading, cv2, requests
+
+from google.type.datetime_pb2 import DateTime
+from pyasn1.debug import Printer
+
 import main
 from crypt import methods
 from threading import Thread
@@ -20,6 +24,14 @@ app = Flask(__name__)
 def remove_spaces(input:str) -> str:
     return input.replace(" ","")
 FILTERS["remove_spaces"] = remove_spaces
+def filter_list(input:list[PrintLater], printer: Printer) -> list[PrintLater]:
+    newList = []
+    for job in input:
+        if job.printer == printer:
+            newList.append(job)
+    return newList
+FILTERS["filter_list"] = filter_list
+
 
 #autoUpdateTest2
 auth = HTTPBasicAuth()
@@ -130,7 +142,7 @@ def index():
 
     for printer in liminal.printers + liminal.MK4Printers:
         printer.refreshData()
-    return render_template("dashboard.html", printers=liminal.printers, mk4_printers = liminal.MK4Printers, currentUser = auth.current_user(), role = get_user_roles(auth.current_user()), notifications = liminal.notifications)
+    return render_template("dashboard.html", printers=liminal.printers, mk4_printers = liminal.MK4Printers, currentUser = auth.current_user(), role = get_user_roles(auth.current_user()), notifications = liminal.notifications, queue=liminal.scheduledPrints)
 
     body = "<html><body style = background-color:#1f1f1f>"
     body += f'''
@@ -985,6 +997,20 @@ def nukeFiles(printerNickname):
             printer.nukeFiles()
             return f"Success, percent storage is now: {printer.percentUsed()}"
 
+@app.route('/printLater/cancel', methods=["POST"])
+@auth.login_required(role=["student", "manager", "developer"])
+def removeItemFromQueue():
+    for printer in liminal.printers + liminal.MK4Printers:
+        if request.form.get("printer") == printer.nickname:
+            for job in liminal.scheduledPrints:
+                if job.nickname == request.form.get("nickname"):
+                    if (job.preheating):
+                        printer.cooldown()
+                    liminal.scheduledPrints.remove(job)
+                    return redirect(url_for("index", txt=f"{job.nickname} has been cancelled on {printer.nickname}", color="success"))
+    return redirect(url_for("index", txt=f"The job count not be located in the queue", color="warning"))
+
+
 @app.route('/printLater', methods = ["POST"])
 @auth.login_required(role = ["student", "manager", "developer"])
 def printLater():
@@ -1021,9 +1047,9 @@ def printLater():
 
         liminal.scheduledPrints.append(printLaterobj)
         print(f"[OPERATIONAL] Print has been scheduled on {printerToPrint.nickname} for {time.strftime('%Y-%m-%d %H:%M:%S')}")
-        return "Print has been scheduled!"
+        return redirect(url_for("index", txt=f"Print has been scheduled!", color="success"))
     else:
-        return f'Printer "{request.form.get("printer")}" not found'
+        return redirect(url_for("index", txt=f"{request.form.get('printer')} was not found", color="warning"))
 
 @app.route('/account/reset/<username>')
 @auth.login_required(role=["developer", "manager"])
@@ -1432,4 +1458,4 @@ if __name__ == '__main__':
 
     for thread in threads:
         thread.start()
-    app.run("0.0.0.0", 8080, liminal.debugging)
+    app.run("0.0.0.0", 8000, liminal.debugging)
