@@ -31,7 +31,13 @@
         </div>
         {% endfor %}
       </div>
+{% set mk4 = false %}
 {% for printer in flags %}
+    {% for subflag in flags[printer] %}
+        {% if flags[printer][loop.index - 1][1] == "serial" %}
+        {% set mk4 = True %}
+    {% endif %}
+    {% endfor %}
   <div class="modal fade" id="update-info-{{printer|remove_spaces}}" tabindex="-1" aria-labelledby="update-info-{{printer|remove_spaces}}" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -44,6 +50,7 @@
         <form action="/dev/ip" method="post" enctype="multipart/form-data">
         <div class="input-group mb-3">
           <input name="printer" type="hidden" value="{{printer}}">
+          <input name="isMk4" type="hidden" value={{mk4}}>
           <span class="input-group-text" id="{{printer|remove_spaces}}-ip-prefix">http://</span>
           <input type="text" name="addr" id="{{printer|remove_spaces}}-ip-input" class="form-control" placeholder="127.0.0.1" aria-label="IP Address" aria-describedby="{{printer|remove_spaces}}-ip-prefix">
           <button type="submit" class="btn btn-primary" id="{{printer|remove_spaces}}-update-ip-bttn">Update IP</button>
@@ -61,7 +68,7 @@
     </div>
   </div>
 </div>
-    {% endfor %}
+{% endfor %}
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha256-CDOy6cOibCWEdsRiZuaHf8dSGGJRYuBGC+mjoJimHGw=" crossorigin="anonymous"></script>
 </body>

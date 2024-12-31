@@ -605,11 +605,13 @@ def changeIPAddr():
     if request.method == "GET":
         return redirect(url_for("setPrinterStatus"))
     else:
-        with open(f"{cwd}/ref/config.json", "r") as f:
+        with (open(f"{cwd}/ref/config.json", "r") as f):
             changedIP = request.form.get("printer")
             newAddress = request.form.get("addr")
+            ismk4 = request.form.get("isMk4").lower() == "true"
             jsonValues = json.load(f)
-            jsonValues[changedIP]["ipAddress"] = "http://" + newAddress
+            field = "Mk4IPAddress" if ismk4 else "ipAddress"
+            jsonValues[changedIP][field] = "http://" + newAddress
         with open(f"{cwd}/ref/config.json", "w") as f:
             json.dump(jsonValues,f,indent=4)
         return redirect(url_for("setPrinterStatus"))
@@ -765,7 +767,7 @@ def ipManagement():
                         color = "warning"
                     else:
                         color = "success"
-                    subflags.append([f"{percentUsed}% of onboard storage used", "good-storage" if color == "danger" else "bad-storage", color])
+                    subflags.append([f"{round(percentUsed,2)}% of onboard storage used", "good-storage" if color == "danger" else "bad-storage", color])
             if item in nicknames:
                 subflags.append(["Printer registered by system", "registered", "success"])
             else:
@@ -779,7 +781,7 @@ def ipManagement():
                     else:
                         subflags.append(["Serial Connection not available", "serial", "primary"])
                     if printer.freeSpace != None:
-                        subflags.append([f"{printer.freeSpace/1_000_000_000}gb free on {printer.storageName}", "storage", "primary"])
+                        subflags.append([f"{round(printer.freeSpace/1_000_000_000,2)}gb free on {printer.storageName}", "storage", "primary"])
                     else:
                         subflags.append([f"Could not determine free storage on {printer.storageName}", "null-storage",
                                      "primary"])
