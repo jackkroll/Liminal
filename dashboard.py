@@ -1,10 +1,10 @@
 import datetime,json,random,time,string,os,sys, threading, cv2, requests
 
-from google.type.datetime_pb2 import DateTime
-from pyasn1.debug import Printer
+#from google.type.datetime_pb2 import DateTime
+#from pyasn1.debug import Printer
 
 import main
-from crypt import methods
+#from crypt import methods
 from threading import Thread
 
 from flask import Flask, request, send_file, redirect, url_for, Response, render_template, jsonify
@@ -24,7 +24,7 @@ app = Flask(__name__)
 def remove_spaces(input:str) -> str:
     return input.replace(" ","")
 FILTERS["remove_spaces"] = remove_spaces
-def filter_list(input:list[PrintLater], printer: Printer) -> list[PrintLater]:
+def filter_list(input:list[PrintLater], printer: SinglePrinter) -> list[PrintLater]:
     newList = []
     for job in input:
         if job.printer == printer:
