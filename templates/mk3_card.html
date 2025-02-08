@@ -58,7 +58,9 @@
   Submit Print Job
 </button>
 <div style="padding-top: 10px">
-{% include "print_modal.html" %}
+    {% with printer = printer %}
+        {% include "print_modal.html" %}
+    {% endwith %}
 
     {% if printer.nozzleTempTarget > 0 or printer.bedTempTarget > 0 %}
     <form action="/cooldown" method="post">

@@ -48,7 +48,9 @@
 </div>
     {% else %}
     {% for printer in printers %}
-    <div class="col-7 col-sm-4" style="padding:10px">{% include "mk3_card.html" %}</div>
+    <div class="col-7 col-sm-4" style="padding:10px">
+        {% include "mk3_card.html" %}
+    </div>
     {% endfor %}
     {% for printer in mk4_printers %}
     <div class="col-7 col-sm-4" style="padding:10px">{% include "mk4_card.html" %}</div>
