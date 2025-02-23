@@ -48,17 +48,19 @@
   Submit Print Job
 </button>
 <div style="padding-top: 10px">
-{% include "print_modal.html" %}
+    {% with printer = printer %}
+        {% include "print_modal.html" %}
+    {% endwith %}
     {% if printer.nozzleTemp > 40 or printer.bedTempTarget > 40 %}
-    <form action="/cooldown" method="post">
-    <input type="hidden" name="printer" value="{{ printer.nickname }}">
-    <button type="submit" class="btn btn-info d-block w-100">Cooldown</button>
-    </form>
-    {% else %}
-    <form action="/heat" method="post">
-    <input type="hidden" name="printer" value="{{ printer.nickname }}">
-    <button type="submit" class="btn btn-danger d-block w-100">Preheat PLA</button>
-    </form>
+        <form action="/cooldown" method="post">
+        <input type="hidden" name="printer" value="{{ printer.nickname }}">
+        <button type="submit" class="btn btn-info d-block w-100">Cooldown</button>
+        </form>
+        {% else %}
+        <form action="/heat" method="post">
+        <input type="hidden" name="printer" value="{{ printer.nickname }}">
+        <button type="submit" class="btn btn-danger d-block w-100">Preheat PLA</button>
+        </form>
     {% endif %}
 {% endif %}
 </div>
