@@ -1442,6 +1442,11 @@ def setupPrinters():
             json.dump(jsonValues, f, indent=4)
         return redirect(url_for("setupLandingPage"))
 
+@app.route("/download/config")
+@auth.login_required(role = ["developer"])
+def downloadConfig():
+    return send_file(f"{cwd}/ref/config.json")
+
 @auth.error_handler
 def auth_error(status):
     return "You don't have access to this page. You likely don't need it. These pages are often restricted to leads and developers as they contain important database management tools, system configuration,account management, and debug information. If you think this is a mistake, talk to a developer or lead", status
