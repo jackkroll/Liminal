@@ -1,5 +1,5 @@
 import time, asyncio, os, pytimeparse, datetime, requests, random, math,json, socket, sys, cv2, serial
-
+import nmap
 from flask import render_template
 from pyasn1.type.univ import Boolean
 from serial.tools import list_ports
@@ -699,25 +699,25 @@ class Liminal():
                     self.scheduledPrints.remove(scheduledPrint)
             time.sleep(10)
 
-    #def portScan(self, hardwareName, networkSuffix):
-    #    if not self.searchingForHosts:
-    #        self.searchingForHosts = True
-    #        scanner = nmap.PortScanner()
-    #        search_limit = 24
-    #        port = 80
-    #       target_address = hardwareName + "." + networkSuffix + "/" + str(search_limit)
-    #        options = "-p " + str(port)
-    #        scanner.scan(target_address, arguments=options)
-    #        hosts = []
-    #        for host in scanner.all_hosts():
-    #            if hardwareName + "." + networkSuffix == scanner[host].hostname():
-    #                hosts.append(host)
-    #        self.searchingForHosts = False
-    #        if len(hosts) == 0:
-    #            print("[OPERATIONAL] No hosts found")
-    #        return hosts
-    #    else:
-    #        return None
+    def portScan(self, hardwareName, networkSuffix):
+        if not self.searchingForHosts:
+            self.searchingForHosts = True
+            scanner = nmap.PortScanner()
+            search_limit = 24
+            port = 80
+            target_address = hardwareName + "." + networkSuffix + "/" + str(search_limit)
+            options = "-p " + str(port)
+            scanner.scan(target_address, arguments=options)
+            hosts = []
+            for host in scanner.all_hosts():
+                if hardwareName + "." + networkSuffix == scanner[host].hostname():
+                    hosts.append(host)
+            self.searchingForHosts = False
+            if len(hosts) == 0:
+                print("[OPERATIONAL] No hosts found")
+            return hosts
+        else:
+            return None
 
 
 
