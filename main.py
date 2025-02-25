@@ -275,19 +275,18 @@ class SinglePrinter():
         try:
             self.printer = make_client(url = url, apikey= key)
             self.printer.connect()
+            self.state = self.printer.state
             #ipAddr = socket.gethostbyname(socket.gethostname())
             #self.printer.gcode(f"M117 {ipAddr}")
         except Exception:
             print("[ERROR] Connection to printer could not be established")
             self.printer = None
+            self.state = "offline"
         #self.printer.home()
         self.user = None
         self.currentFile = None
-        #if self.printer != None:
-            #self.state = self.printer.state()
-
         #else:
-        self.state = "offline"
+
         #operational
         #paused
         #printing
