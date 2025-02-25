@@ -306,7 +306,11 @@ class SinglePrinter():
         self.nozzleTempTarget = self.fetchNozzleTemp()["target"]
         self.bedTempActual = self.fetchBedTemp()["actual"]
         self.bedTempTarget = self.fetchBedTemp()["target"]
-        self.state = self.printer.state()
+        try:
+            self.state = self.printer.state()
+        except RuntimeError:
+            self.state = "offline"
+            self.printer = None
         if "printing" in self.state.lower():
             self.printing = True
             self.paused = False
@@ -714,7 +718,7 @@ class Liminal():
             self.searchingForHosts = False
             if len(hosts) == 0:
                 print("[OPERATIONAL] No hosts found")
-            return hosts
+            self.possibleHosts = hosts
         else:
             return None
 
