@@ -258,6 +258,8 @@ class SinglePrinter():
         self.type = "MK3"
         self.nickname = nickname
         self.code = code
+        #mirror of Mk4, result of internal use of the same terms
+        self.prefix = self.code
         self.url = url
         self.key = key
         self.state = None

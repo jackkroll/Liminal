@@ -1,4 +1,4 @@
-<div class="modal fade" id="determine-path" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="determine-path" aria-hidden="true">
+<div class="modal fade" id="determine-path-{{printer.prefix}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="determine-path" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -6,15 +6,15 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body" >
-        <button type="button" style="margin-bottom:10px" class="btn btn-primary w-100 d-block" data-bs-toggle="modal" data-bs-target="#schedule-print-{{printer.nickname}}">Schedule Print</button>
-        <button type="button" style="margin-bottom:10px" class="btn btn-primary w-100 d-block" data-bs-toggle="modal" data-bs-target="#submit-print-{{printer.nickname}}">Print Now</button>
+        <button type="button" style="margin-bottom:10px" class="btn btn-primary w-100 d-block" data-bs-toggle="modal" data-bs-target="#schedule-print-{{printer.prefix}}">Schedule Print</button>
+        <button type="button" style="margin-bottom:10px" class="btn btn-primary w-100 d-block" data-bs-toggle="modal" data-bs-target="#submit-print-{{printer.prefix}}">Print Now</button>
       </div>
     </div>
     </div>
   </div>
 
 
-<div class="modal fade" id="submit-print-{{printer.nickname}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="submit-print" aria-hidden="true">
+<div class="modal fade" id="submit-print-{{printer.prefix}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="submit-print" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -44,7 +44,7 @@
   </div>
 </div>
 
-<div class="modal fade" id="schedule-print-{{printer.nickname}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="schedule-print" aria-hidden="true">
+<div class="modal fade" id="schedule-print-{{printer.prefix}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="schedule-print" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
