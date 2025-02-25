@@ -283,11 +283,11 @@ class SinglePrinter():
         #self.printer.home()
         self.user = None
         self.currentFile = None
-        if self.printer != None:
-            self.state = self.printer.state()
+        #if self.printer != None:
+            #self.state = self.printer.state()
 
-        else:
-            self.state = "offline"
+        #else:
+        self.state = "offline"
         #operational
         #paused
         #printing
