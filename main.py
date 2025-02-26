@@ -311,9 +311,11 @@ class SinglePrinter():
         except RuntimeError:
             self.state = "offline"
             self.printer = None
+            return
         if "printing" in self.state.lower():
             self.printing = True
             self.paused = False
+        # Accounts for "pause(d)" or "pausing"
         elif "paus" in self.state.lower():
             self.printing = True
             self.paused = True
@@ -330,7 +332,6 @@ class SinglePrinter():
     def updateState(self):
         state = self.printer.state
         self.state = state
-        print("state")
         return state
 
     def preheat(self):

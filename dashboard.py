@@ -142,6 +142,9 @@ def index():
 
     for printer in liminal.printers + liminal.MK4Printers:
         printer.refreshData()
+    for printer in liminal.printers:
+        if printer.printer == None:
+            liminal.printers.remove(printer)
     return render_template("dashboard.html", printers=liminal.printers, mk4_printers = liminal.MK4Printers, currentUser = auth.current_user(), role = get_user_roles(auth.current_user()), notifications = liminal.notifications, queue=liminal.scheduledPrints)
 
     body = "<html><body style = background-color:#1f1f1f>"
