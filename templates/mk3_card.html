@@ -24,7 +24,7 @@
     </div>
     <hr>
 {% if printer.printing %}
-<!-- <h5 style="padding-top:10px">Job title by User</h5> -->
+<h5 style="padding-top:10px">{{printer.jobTitle | pretty_print_name}} </h5>
 {% if printer.state == "Paused" %}
 {% set color = "warning" %}
 {% set bar = "progress-bar" %}

@@ -1,4 +1,4 @@
-import time, asyncio, os, pytimeparse, datetime, requests, random, math,json, socket, sys, cv2, serial
+import time, asyncio, os, pytimeparse, datetime, requests, random, math,json, socket, sys, cv2, serial,re
 import nmap
 from flask import render_template
 from pyasn1.type.univ import Boolean
@@ -92,6 +92,7 @@ class Mk4Printer():
         self.state = None
         self.currentPrintID = None
         self.progress = None
+        self.jobTitle = None
         self.ip = ipAddress
         self.portStr = portStr
         self.key = apiKey
@@ -144,7 +145,6 @@ class Mk4Printer():
         headers = {"X-API-KEY": self.key}
         response = requests.get(f"http://{self.ip}/api/v1/status", headers=headers)
         data = response.json()
-        print(data)
         self.nozzleTemp = data["printer"]["temp_nozzle"]
         self.bedTemp = data["printer"]["temp_bed"]
         self.state = data["printer"]["state"]
@@ -152,10 +152,12 @@ class Mk4Printer():
             self.currentPrintID = data["job"]["id"]
             self.progress = data["job"]["progress"]
             self.printing = True
+            self.jobTitle = self.fetchJobTitle()
         else:
             self.currentPrintID = None
             self.progress = None
             self.printing = False
+            self.jobTitle = "Untitled"
         if "transfer" in data and "progress" in data["transfer"]:
             self.transfer = data["transfer"]["progress"]
         else:
@@ -167,7 +169,16 @@ class Mk4Printer():
             self.freeSpace = None
             self.storageName = None
 
-        print(response.json())
+    def fetchJobTitle(self):
+        headers = {"X-API-KEY": self.key}
+        response = requests.get(f"http://{self.ip}/api/v1/job", headers=headers)
+        data = response.json()
+        try:
+            return data["file"]["display_name"]
+        except KeyError:
+            return None
+
+
     def checkUpdate(self):
         headers = {"X-API-KEY": self.key}
         returnDict = []
@@ -270,6 +281,7 @@ class SinglePrinter():
         self.printing = False
         self.progress = 0
         self.paused = False
+        self.jobTitle = "Untitled"
         #Idle, Printing, Offline
        #self.color = color
         try:
@@ -306,6 +318,19 @@ class SinglePrinter():
         self.nozzleTempTarget = self.fetchNozzleTemp()["target"]
         self.bedTempActual = self.fetchBedTemp()["actual"]
         self.bedTempTarget = self.fetchBedTemp()["target"]
+        try:
+            info = self.printer.job_info()
+            if info != None:
+                title = info["job"]["file"]["name"]
+                if title != None:
+                    title = title.replace(".gcode","")
+                else:
+                    self.jobTitle = "Untitled"
+                self.jobTitle = title
+            else:
+                self.jobTitle = "Untitled"
+        except RuntimeError:
+            self.jobTitle = "Untitled"
         try:
             self.state = self.printer.state()
         except RuntimeError:

@@ -11,7 +11,7 @@ from flask import Flask, request, send_file, redirect, url_for, Response, render
 from jinja2.filters import FILTERS
 from firebase_admin import credentials, initialize_app, storage
 from main import IndividualPrint,SinglePrinter, Liminal,PrintLater
-import firebase_admin
+import firebase_admin, re
 from firebase_admin import credentials, firestore
 import numpy as np
 from datetime import datetime
@@ -32,6 +32,12 @@ def filter_list(input:list[PrintLater], printer: SinglePrinter) -> list[PrintLat
     return newList
 FILTERS["filter_list"] = filter_list
 
+def pretty_print_name(input:str) -> str:
+    #prusa slicer tags on the end are removed
+    #pattern = "_[0-9].[0-9]n_[0-9].[0-9]mm_[A-Z]+_[0-z]+_[0-z]+.*gcode"
+    pattern = "(_[a-zA-Z0-9.]+)|(\.(.?)gcode)"
+    return re.sub(pattern,"",input)
+FILTERS["pretty_print_name"] = pretty_print_name
 
 #autoUpdateTest2
 auth = HTTPBasicAuth()
@@ -114,6 +120,9 @@ except Exception:
 
 
 
+@app.route('/favicon.ico')
+def favicon():
+    return send_file('mungy.ICO')
 
 #CWD, current working directory, is the directory that the file is in
 @app.route('/')

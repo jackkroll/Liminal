@@ -3,7 +3,7 @@
 <div class="card-title">
 <span class="h2">{{ printer.nickname }}</span>
 
-   <span class="badge text-bg-">Prusalink</span>
+   <span class="badge text-bg-primary">Prusalink</span>
     <!-- Change depending on state -->
    <span class="badge text-bg-success">{{ printer.state }}</span>
 </div>
@@ -14,7 +14,7 @@
     </div>
     <hr>
 {% if printer.printing %}
-<h5 style="padding-top:10px">Job title by User</h5>
+<h5 style="padding-top:10px">{{printer.jobTitle | pretty_print_name}} </h5>
 {% if printer.state == "Paused" %}
 {% set color = "warning" %}
 {% set bar = "progress-bar" %}
@@ -51,7 +51,7 @@
     {% with printer = printer %}
         {% include "print_modal.html" %}
     {% endwith %}
-    {% if printer.nozzleTemp > 40 or printer.bedTempTarget > 40 %}
+    {% if printer.nozzleTemp > 40 %}
         <form action="/cooldown" method="post">
         <input type="hidden" name="printer" value="{{ printer.nickname }}">
         <button type="submit" class="btn btn-info d-block w-100">Cooldown</button>
